@@ -6,6 +6,7 @@ import React, { type FC } from 'react';
 interface MorningReflectionProps {
   content: string;
   onContentChange: (content: string) => void;
+  onContentBlur: () => void;  // Add this line
   intention: string;
   onIntentionChange: (intention: string) => void;
   gratitudeList: string[];

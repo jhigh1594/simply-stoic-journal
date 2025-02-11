@@ -1,6 +1,5 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
-
-const genAI = new GoogleGenerativeAI('AIzaSyDlkXv4kVeQkbS4UWgMDQiIGsNCQZvR-JQ');
+import { genAI } from './gemini-config.ts';  // Add .ts extension
+import type { EveningReviewContent, AIInsights } from '../types/journal';
 
 // Helper to ensure consistent prompt structure
 const createStructuredPrompt = (type: 'journal' | 'decision', content: string) => {
@@ -58,10 +57,13 @@ const createStructuredPrompt = (type: 'journal' | 'decision', content: string) =
   return prompts[type];
 };
 
-import { genAI } from './gemini-config';
-import type { EveningReviewContent } from '../types/journal';
+// Remove this interface since we're now using AIInsights from types/journal
+interface JournalInsights {
+  analysis: string;
+  timestamp: string;
+}
 
-export async function generateJournalInsights(content: string | EveningReviewContent, type: 'morning' | 'evening' = 'morning') {
+export async function generateJournalInsights(content: string | EveningReviewContent, type: 'morning' | 'evening' = 'morning'): Promise<AIInsights> {
   try {
     const model = genAI.getGenerativeModel({ model: "gemini-pro" });
 
@@ -108,7 +110,23 @@ export async function generateJournalInsights(content: string | EveningReviewCon
   }
 }
 
-export async function generateDecisionAnalysis(content: string) {
+export interface DecisionAnalysisResult {
+  dichotomy_of_control: {
+    within_control: string[];
+    partial_control: string[];
+    outside_control: string[];
+    reflection: string;
+  };
+  virtue_analysis: {
+    wisdom: string;
+    justice: string;
+    courage: string;
+    temperance: string;
+  };
+  recommendations: string[];
+}
+
+export async function generateDecisionAnalysis(content: string): Promise<DecisionAnalysisResult> {
   const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
 
   try {

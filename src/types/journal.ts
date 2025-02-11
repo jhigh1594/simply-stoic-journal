@@ -1,4 +1,11 @@
-// Add new types for evening review
+export interface AIInsights {
+  analysis: string;
+  timestamp: string;
+  themes?: string[];
+  keywords?: string[];
+  sentiment?: string;
+}
+
 export interface EveningReviewContent {
   mainContent: string;
   virtues: {
@@ -18,37 +25,26 @@ export interface EveningReviewContent {
   };
 }
 
-export interface DecisionAnalysis {
-  question: string;
-  factors: Array<{
-    text: string;
-    type: 'controllable' | 'uncontrollable';
-    impact: 'high' | 'medium' | 'low';
-  }>;
-  analysis: string;
-  conclusion: string;
-}
-
 export interface JournalEntry {
-  id: string;
-  user_id: string;
+  id?: string;
   date: string;
+  user_id: string;
   type: 'morning' | 'evening' | 'decision';
   mood?: string;
   content: string;
-  intention: string;
-  gratitudeList: string[]; // Changed from gratitude_list to gratitudeList
-  priorities: string[];
   tags: string[];
-  ai_insights: Record<string, any>;
+  intention?: string;
+  gratitudeList: string[]; // Remove optional flag
+  priorities: string[]; // Remove optional flag
   decision_analysis?: {
     question: string;
-    factors: {
+    factors: Array<{
       text: string;
       type: 'controllable' | 'uncontrollable';
       impact: 'high' | 'medium' | 'low';
-    }[];
+    }>;
     analysis: string;
     conclusion: string;
   };
+  ai_insights?: AIInsights;
 }

@@ -13,11 +13,19 @@ const toJournalEntry = (dbEntry: DBJournalEntry): JournalEntry => ({
   mood: dbEntry.mood || undefined,
   content: dbEntry.content || '',
   intention: dbEntry.intention || '',
-  gratitudeList: dbEntry.gratitudeList || [], // Changed from gratitude_list
+  gratitudeList: dbEntry.gratitudeList || [],
   priorities: dbEntry.priorities || [],
   tags: dbEntry.tags || [],
-  ai_insights: dbEntry.ai_insights as JournalEntry['ai_insights'],
-  decision_analysis: dbEntry.decision_analysis as JournalEntry['decision_analysis']
+  ai_insights: dbEntry.ai_insights 
+    ? typeof dbEntry.ai_insights === 'string' 
+      ? JSON.parse(dbEntry.ai_insights)
+      : dbEntry.ai_insights
+    : undefined,
+  decision_analysis: dbEntry.decision_analysis
+    ? typeof dbEntry.decision_analysis === 'string'
+      ? JSON.parse(dbEntry.decision_analysis)
+      : dbEntry.decision_analysis
+    : undefined
 });
 
 export const journalService = {

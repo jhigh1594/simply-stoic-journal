@@ -12,13 +12,32 @@ interface AIInsights {
 }
 
 interface AIInsightsSectionProps {
-  insights: JournalEntry['ai_insights'] & AIInsights;
-  isLoading?: boolean;
-  error?: string | null;
+  insights?: {  // Make the entire insights object optional
+    summary?: string;
+    themes?: string[];
+    recommendations?: string[];
+    stoic_analysis?: string;
+    analysis?: string;
+    timestamp?: string;
+  };
+  isLoading: boolean;
+  error: string | null;
   onRefresh?: () => void;
 }
 
-function AIInsightsSection({ insights, isLoading, error, onRefresh }: AIInsightsSectionProps) {
+export default function AIInsightsSection({ insights, isLoading, error, onRefresh }: AIInsightsSectionProps) {
+  if (isLoading) {
+    return <div>Generating insights...</div>;
+  }
+
+  if (error) {
+    return <div className="text-red-600">{error}</div>;
+  }
+
+  if (!insights) {
+    return null;  // Or return a placeholder component
+  }
+
   const [isExpanded, setIsExpanded] = React.useState(true);
 
   if (!insights && !isLoading && !error) return null;
@@ -127,4 +146,5 @@ function AIInsightsSection({ insights, isLoading, error, onRefresh }: AIInsights
   );
 }
 
-export default AIInsightsSection;
+// Remove this line
+// export default AIInsightsSection;
