@@ -1,32 +1,43 @@
 import { supabase } from '../lib/supabase';
-import type { JournalEntry } from '../types/journal';
+import type { JournalEntry, AIInsights } from '../types/journal';
 import type { Database } from '../types/supabase';
 
 type DBJournalEntry = Database['public']['Tables']['journal_entries']['Row'];
 
 // Convert database entry to application type
-const toJournalEntry = (dbEntry: DBJournalEntry): JournalEntry => ({
-  id: dbEntry.id,
-  user_id: dbEntry.user_id,
-  date: dbEntry.created_at,
-  type: dbEntry.type,
-  mood: dbEntry.mood || undefined,
-  content: dbEntry.content || '',
-  intention: dbEntry.intention || '',
-  gratitudeList: dbEntry.gratitudeList || [],
-  priorities: dbEntry.priorities || [],
-  tags: dbEntry.tags || [],
-  ai_insights: dbEntry.ai_insights 
-    ? typeof dbEntry.ai_insights === 'string' 
-      ? JSON.parse(dbEntry.ai_insights)
-      : dbEntry.ai_insights
-    : undefined,
-  decision_analysis: dbEntry.decision_analysis
-    ? typeof dbEntry.decision_analysis === 'string'
-      ? JSON.parse(dbEntry.decision_analysis)
-      : dbEntry.decision_analysis
-    : undefined
-});
+const toJournalEntry = (dbEntry: DBJournalEntry): JournalEntry => {
+  // Parse AI insights if it exists
+  let parsedAiInsights: AIInsights | undefined;
+  if (dbEntry.ai_insights) {
+    try {
+      parsedAiInsights = typeof dbEntry.ai_insights === 'string' 
+        ? JSON.parse(dbEntry.ai_insights)
+        : dbEntry.ai_insights;
+    } catch (error) {
+      console.error('Error parsing AI insights:', error);
+      parsedAiInsights = undefined;
+    }
+  }
+
+  return {
+    id: dbEntry.id,
+    user_id: dbEntry.user_id,
+    date: dbEntry.created_at,
+    type: dbEntry.type,
+    mood: dbEntry.mood || undefined,
+    content: dbEntry.content || '',
+    intention: dbEntry.intention || '',
+    gratitudeList: dbEntry.gratitudeList || [],
+    priorities: dbEntry.priorities || [],
+    tags: dbEntry.tags || [],
+    ai_insights: parsedAiInsights,
+    decision_analysis: dbEntry.decision_analysis
+      ? typeof dbEntry.decision_analysis === 'string'
+        ? JSON.parse(dbEntry.decision_analysis)
+        : dbEntry.decision_analysis
+      : undefined
+  };
+};
 
 export const journalService = {
   async getEntries() {

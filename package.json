@@ -25,7 +25,8 @@
     "react-dom": "^18.3.1",
     "react-hot-toast": "^2.5.1",
     "react-router-dom": "^6.22.3",
-    "usetiful-sdk": "^0.2.0"
+    "usetiful-sdk": "^0.2.0",
+    "vercel": "^32.3.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.9.1",

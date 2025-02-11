@@ -2,18 +2,17 @@ import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import { Bold, Italic, List, Quote } from 'lucide-react'
 import React, { type FC } from 'react';
+import { usePriorities } from '../../../hooks/usePriorities';
 
 interface MorningReflectionProps {
   content: string;
   onContentChange: (content: string) => void;
-  onContentBlur: () => void;  // Add this line
+  onContentBlur: () => void;
   intention: string;
   onIntentionChange: (intention: string) => void;
   gratitudeList: string[];
   onGratitudeListChange: (list: string[]) => void;
   onOpenPromptLibrary: () => void;
-  priorities: string[];
-  onPrioritiesChange: (priorities: string[]) => void;
 }
 
 const MorningReflection: FC<MorningReflectionProps> = ({
@@ -24,8 +23,6 @@ const MorningReflection: FC<MorningReflectionProps> = ({
   gratitudeList,
   onGratitudeListChange,
   onOpenPromptLibrary,
-  priorities,
-  onPrioritiesChange
 }) => {
   const editor = useEditor({
     extensions: [StarterKit],
@@ -80,6 +77,24 @@ const MorningReflection: FC<MorningReflectionProps> = ({
       editor.commands.setContent(content);
     }
   }, [editor, content]);
+
+  // Add usePriorities hook
+  const { priorities: dailyPriorities, setPriorityList } = usePriorities();
+  const [editPriorities, setEditPriorities] = React.useState<string[]>([]);
+
+  // Load priorities when component mounts
+  React.useEffect(() => {
+    if (dailyPriorities?.priorities) {
+      setEditPriorities(dailyPriorities.priorities);
+    }
+  }, [dailyPriorities]);
+
+  // Handle priority updates
+  const handlePrioritiesChange = async (newPriorities: string[]) => {
+    setEditPriorities(newPriorities);
+    const today = new Date().toISOString().split('T')[0];
+    await setPriorityList(newPriorities, today);
+  };
 
   return (
     <div className="space-y-8">
@@ -155,23 +170,23 @@ const MorningReflection: FC<MorningReflectionProps> = ({
       <section>
         <h2 className="text-xl font-semibold mb-4">Today's Priorities</h2>
         <div className="space-y-4">
-          {priorities.map((priority: string, index: number) => (
+          {editPriorities.map((priority: string, index: number) => (
             <div key={index} className="flex gap-2">
               <input
                 type="text"
                 value={priority}
                 onChange={(e) => {
-                  const newPriorities = [...priorities];
+                  const newPriorities = [...editPriorities];
                   newPriorities[index] = e.target.value;
-                  onPrioritiesChange(newPriorities);
+                  handlePrioritiesChange(newPriorities);
                 }}
                 placeholder="Enter a priority..."
                 className="flex-1 p-2 border rounded"
               />
               <button
                 onClick={() => {
-                  const newPriorities = priorities.filter((_, i) => i !== index);
-                  onPrioritiesChange(newPriorities);
+                  const newPriorities = editPriorities.filter((_, i) => i !== index);
+                  handlePrioritiesChange(newPriorities);
                 }}
                 className="text-red-500 hover:text-red-700"
               >
@@ -179,9 +194,9 @@ const MorningReflection: FC<MorningReflectionProps> = ({
               </button>
             </div>
           ))}
-          {priorities.length < 3 && (
+          {editPriorities.length < 3 && (
             <button
-              onClick={() => onPrioritiesChange([...priorities, ''])}
+              onClick={() => handlePrioritiesChange([...editPriorities, ''])}
               className="text-blue-500 hover:text-blue-700"
             >
               Add Priority

@@ -7,6 +7,7 @@ import Library from './pages/Library';
 import Templates from './pages/Templates';
 import { AuthProvider } from './providers/AuthProvider';
 import Journal from './pages/Journal';
+import LandingPage from './pages/Landing/LandingPage';
 
 function App() {
   return (
@@ -27,6 +28,7 @@ function App() {
             <Route path="planning" element={<Planning />} />
             <Route path="library" element={<Library />} />
             <Route path="templates" element={<Templates />} />
+            <Route path="landing" element={<LandingPage />} />
           </Route>
         </Routes>
       </AuthProvider>
