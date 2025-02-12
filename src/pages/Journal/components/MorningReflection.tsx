@@ -159,26 +159,13 @@ export const MorningReflection: React.FC<MorningReflectionProps> = ({
         <h2 className="text-xl font-semibold mb-4">🎯 Review Your Goals</h2>
         <div className="space-y-4">
           {bigGoals.filter(goal => goal.status === 'in_progress').map((goal) => (
-            <div key={goal.id} className="space-y-2">
-              <BigGoalCard 
-                key={goal.id} 
-                goal={goal} 
-                onUpdate={loadBigGoals}
-                isExpanded={expandedGoals.includes(goal.id)}
-                onToggle={() => toggleGoal(goal.id)}
-              />
-              {expandedGoals.includes(goal.id) && checkpointGoals[goal.id]?.length > 0 && (
-                <div className="ml-8">
-                  {checkpointGoals[goal.id].map((checkpoint: CheckpointGoal) => (
-                    <CheckpointGoalCard
-                      key={checkpoint.id}
-                      goal={checkpoint}
-                      onUpdate={() => handleCheckpointUpdate(checkpoint.big_goal_id)}
-                    />
-                  ))}
-                </div>
-              )}
-            </div>
+            <BigGoalCard 
+              key={goal.id} 
+              goal={goal} 
+              onUpdate={loadBigGoals}
+              isExpanded={expandedGoals.includes(goal.id)}
+              onToggle={() => toggleGoal(goal.id)}
+            />
           ))}
           
           {bigGoals.filter(goal => goal.status === 'in_progress').length === 0 && (
@@ -287,8 +274,8 @@ export const MorningReflection: React.FC<MorningReflectionProps> = ({
               <button
                 onClick={() => {
                   const newPriorities = editPriorities.filter((_, i) => i !== index);
-                  setEditPriorities(newPriorities); // Update local state first
-                  debouncedPriorityUpdate(newPriorities); // Then trigger debounced update
+                  setEditPriorities(newPriorities);
+                  debouncedPriorityUpdate(newPriorities);
                 }}
                 className="flex-shrink-0 text-red-500 hover:text-red-700"
               >
@@ -300,8 +287,8 @@ export const MorningReflection: React.FC<MorningReflectionProps> = ({
             <button
               onClick={() => {
                 const newPriorities = [...editPriorities, ''];
-                setEditPriorities(newPriorities); // Update local state first
-                debouncedPriorityUpdate(newPriorities); // Then trigger debounced update
+                setEditPriorities(newPriorities);
+                debouncedPriorityUpdate(newPriorities);
               }}
               className="text-blue-500 hover:text-blue-700"
             >
