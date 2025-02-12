@@ -4,17 +4,17 @@ import type { Practice } from '../../../types/library';
 import LoadingSpinner from '../../../components/LoadingSpinner';
 import { usePractices } from '../../../hooks/usePractices';
 import { useAuth } from '../../../hooks/useAuth';
+import ErrorMessage from '../../../components/ErrorMessage';
 
 interface PracticesTabProps {
   searchQuery: string;
   showCommunity?: boolean;
 }
 
-
 function PracticesTab({ searchQuery, showCommunity }: PracticesTabProps) {
   const [expandedId, setExpandedId] = React.useState<string | null>(null);
-  const { practices, isLoading, error, loadPractices, completePractice } = usePractices();
   const [showAddPractice, setShowAddPractice] = React.useState(false);
+  const { practices, isLoading, error, loadPractices, completePractice } = usePractices();
   const { userId } = useAuth();
 
   React.useEffect(() => {
@@ -24,9 +24,14 @@ function PracticesTab({ searchQuery, showCommunity }: PracticesTabProps) {
   
   const filteredPractices = practices.filter(practice =>
     (showCommunity ? practice.is_community : !practice.is_community) &&
-    practice.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    practice.description.toLowerCase().includes(searchQuery.toLowerCase())
+    (practice.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    practice.description.toLowerCase().includes(searchQuery.toLowerCase()))
   );
+
+  // Remove the error-throwing function
+  // function setShowAddPractice(arg0: boolean): void {
+  //   throw new Error('Function not implemented.');
+  // }
 
   return (
     <div className="space-y-4">
@@ -91,7 +96,7 @@ function PracticesTab({ searchQuery, showCommunity }: PracticesTabProps) {
               <div>
                 <h4 className="font-medium mb-2">Tips</h4>
                 <ul className="list-disc list-inside text-gray-600 space-y-1">
-                  {practice.tips.map((tip, index) => (
+                  {practice.tips.map((tip: string, index: number) => (
                     <li key={index}>{tip}</li>
                   ))}
                 </ul>
@@ -99,7 +104,7 @@ function PracticesTab({ searchQuery, showCommunity }: PracticesTabProps) {
               
               <div className="flex justify-end mt-4">
                 <button
-                  onClick={() => completePractice(practice.id, userId)}
+                  onClick={() => userId && completePractice(practice.id, userId)}
                   disabled={isLoading}
                   className="flex items-center gap-2 px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 disabled:opacity-50"
                 >

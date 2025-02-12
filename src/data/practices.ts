@@ -111,6 +111,20 @@ export const practices: Practice[] = [
   },
   {
     id: '10',
+    title: 'Fear Setting',
+    description: 'Define and analyze your fears to reduce anxiety and make better decisions',
+    instructions: 'Write down a fear or challenge you\'re facing. Then, follow these three steps: 1) Define the worst-case scenarios and potential preventive measures, 2) List ways you could repair the damage in each scenario, 3) Consider the cost of inaction and potential benefits of partial success.',
+    tips: [
+      'Be specific about your fears - avoid vague scenarios',
+      'Focus on what you can control or influence',
+      'Consider both short-term and long-term implications',
+      'Write down concrete action steps for prevention and repair',
+      'Remember that most fears are less devastating when examined closely'
+    ],
+    category: 'general'
+  },
+  {
+    id: '10',
     title: 'Self-Dialogue Writing',
     description: 'Examine your thoughts through written dialogue',
     instructions: 'Write a dialogue between yourself and your wiser self. Present your concerns and challenges, then respond with reason and wisdom.',

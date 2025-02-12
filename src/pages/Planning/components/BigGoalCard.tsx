@@ -1,17 +1,43 @@
 import React from 'react';
 import { ChevronDown, ChevronUp, Scale, Target, Calendar } from 'lucide-react';
-import type { BigGoal } from '../../../types/planning';
+import type { BigGoal, CheckpointGoal } from '../../../types/planning';
 import { planningService } from '../../../services/planning';
+import { CheckpointGoalCard } from './CheckpointGoalCard';  // Change to named import
 import LoadingSpinner from '../../../components/LoadingSpinner';
+import { usePlanning } from '../../../hooks/usePlanning';
 
 interface BigGoalCardProps {
   goal: BigGoal;
   onUpdate: () => void;
+  isExpanded?: boolean;
+  onToggle?: () => void;
 }
 
-function BigGoalCard({ goal, onUpdate }: BigGoalCardProps) {
-  const [isExpanded, setIsExpanded] = React.useState(false);
+function BigGoalCard({ goal, onUpdate, isExpanded: controlledExpanded, onToggle }: BigGoalCardProps) {
+  const [internalExpanded, setInternalExpanded] = React.useState(false);
   const [isUpdating, setIsUpdating] = React.useState(false);
+  const [isLoadingCheckpoints, setIsLoadingCheckpoints] = React.useState(false);
+  const { checkpointGoals, loadCheckpointGoals } = usePlanning();
+
+  // Use controlled or uncontrolled expanded state
+  const isExpanded = controlledExpanded ?? internalExpanded;
+  const setIsExpanded = onToggle ?? setInternalExpanded;
+
+  React.useEffect(() => {
+    const loadGoalCheckpoints = async () => {
+      if (!isExpanded) return;
+      try {
+        setIsLoadingCheckpoints(true);
+        await loadCheckpointGoals(goal.id);
+      } catch (error) {
+        console.error('Error loading checkpoint goals:', error);
+      } finally {
+        setIsLoadingCheckpoints(false);
+      }
+    };
+
+    loadGoalCheckpoints();
+  }, [goal.id, isExpanded, loadCheckpointGoals]);
 
   const handleStatusChange = async (status: BigGoal['status']) => {
     try {
@@ -94,110 +120,135 @@ function BigGoalCard({ goal, onUpdate }: BigGoalCardProps) {
         </div>
       </div>
 
-      {isExpanded && goal.stoic_analysis && (
+      {isExpanded && (
         <div className="px-4 pb-4 border-t pt-4">
-          <div className="flex items-center gap-2 mb-4 text-gray-600">
-            <Scale className="h-4 w-4" />
-            <h4 className="font-medium">Stoic Analysis</h4>
-          </div>
-
-          {goal.stoic_analysis.control && (
-            <div className="mb-6">
-              <h5 className="text-sm font-medium mb-2">Dichotomy of Control</h5>
-              <div className="grid grid-cols-3 gap-4">
-                <div>
-                  <h6 className="text-xs text-gray-500 mb-1">Within Control</h6>
-                  <ul className="text-sm space-y-1">
-                    {goal.stoic_analysis.control.within_control.map((item, i) => (
-                      <li key={i} className="text-gray-600">{item}</li>
-                    ))}
-                  </ul>
-                </div>
-                <div>
-                  <h6 className="text-xs text-gray-500 mb-1">Partial Control</h6>
-                  <ul className="text-sm space-y-1">
-                    {goal.stoic_analysis.control.partial_control.map((item, i) => (
-                      <li key={i} className="text-gray-600">{item}</li>
-                    ))}
-                  </ul>
-                </div>
-                <div>
-                  <h6 className="text-xs text-gray-500 mb-1">Outside Control</h6>
-                  <ul className="text-sm space-y-1">
-                    {goal.stoic_analysis.control.outside_control.map((item, i) => (
-                      <li key={i} className="text-gray-600">{item}</li>
-                    ))}
-                  </ul>
-                </div>
+          {/* Stoic Analysis section */}
+          {goal.stoic_analysis && (
+            <>
+              <div className="flex items-center gap-2 mb-4 text-gray-600">
+                <Scale className="h-4 w-4" />
+                <h4 className="font-medium">Stoic Analysis</h4>
               </div>
-              {goal.stoic_analysis.control.reflections && (
-                <div className="mt-3">
-                  <h6 className="text-xs text-gray-500 mb-1">Reflections</h6>
-                  <p className="text-sm text-gray-600">
-                    {goal.stoic_analysis.control.reflections}
-                  </p>
-                </div>
-              )}
-            </div>
-          )}
-
-          {goal.stoic_analysis.virtues && (
-            <div className="mb-6">
-              <h5 className="text-sm font-medium mb-2">Virtue Alignment</h5>
-              <div className="grid grid-cols-4 gap-4">
-                {Object.entries(goal.stoic_analysis.virtues).map(([virtue, value]) => (
-                  virtue !== 'notes' && (
-                    <div key={virtue}>
-                      <h6 className="text-xs text-gray-500 mb-1 capitalize">{virtue}</h6>
-                      <div className="h-1 bg-gray-100 rounded-full">
-                        <div
-                          className="h-full bg-blue-500 rounded-full"
-                          style={{ width: `${(value / 10) * 100}%` }}
-                        />
-                      </div>
-                      <div className="text-xs text-gray-500 mt-1">{value}/10</div>
+              {goal.stoic_analysis.control && (
+                <div className="mb-6">
+                  <h5 className="text-sm font-medium mb-2">Dichotomy of Control</h5>
+                  <div className="grid grid-cols-3 gap-4">
+                    <div>
+                      <h6 className="text-xs text-gray-500 mb-1">Within Control</h6>
+                      <ul className="text-sm space-y-1">
+                        {goal.stoic_analysis.control.within_control.map((item, i) => (
+                          <li key={i} className="text-gray-600">{item}</li>
+                        ))}
+                      </ul>
                     </div>
-                  )
-                ))}
-              </div>
-              {goal.stoic_analysis.virtues.notes && (
-                <div className="mt-3">
-                  <h6 className="text-xs text-gray-500 mb-1">Notes</h6>
-                  <p className="text-sm text-gray-600">
-                    {goal.stoic_analysis.virtues.notes}
-                  </p>
+                    <div>
+                      <h6 className="text-xs text-gray-500 mb-1">Partial Control</h6>
+                      <ul className="text-sm space-y-1">
+                        {goal.stoic_analysis.control.partial_control.map((item, i) => (
+                          <li key={i} className="text-gray-600">{item}</li>
+                        ))}
+                      </ul>
+                    </div>
+                    <div>
+                      <h6 className="text-xs text-gray-500 mb-1">Outside Control</h6>
+                      <ul className="text-sm space-y-1">
+                        {goal.stoic_analysis.control.outside_control.map((item, i) => (
+                          <li key={i} className="text-gray-600">{item}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                  {goal.stoic_analysis.control.reflections && (
+                    <div className="mt-3">
+                      <h6 className="text-xs text-gray-500 mb-1">Reflections</h6>
+                      <p className="text-sm text-gray-600">
+                        {goal.stoic_analysis.control.reflections}
+                      </p>
+                    </div>
+                  )}
                 </div>
               )}
-            </div>
+
+              {goal.stoic_analysis.virtues && (
+                <div className="mb-6">
+                  <h5 className="text-sm font-medium mb-2">Virtue Alignment</h5>
+                  <div className="grid grid-cols-4 gap-4">
+                    {Object.entries(goal.stoic_analysis.virtues).map(([virtue, value]) => (
+                      virtue !== 'notes' && (
+                        <div key={virtue}>
+                          <h6 className="text-xs text-gray-500 mb-1 capitalize">{virtue}</h6>
+                          <div className="h-1 bg-gray-100 rounded-full">
+                            <div
+                              className="h-full bg-blue-500 rounded-full"
+                              style={{ width: `${(value / 10) * 100}%` }}
+                            />
+                          </div>
+                          <div className="text-xs text-gray-500 mt-1">{value}/10</div>
+                        </div>
+                      )
+                    ))}
+                  </div>
+                  {goal.stoic_analysis.virtues.notes && (
+                    <div className="mt-3">
+                      <h6 className="text-xs text-gray-500 mb-1">Notes</h6>
+                      <p className="text-sm text-gray-600">
+                        {goal.stoic_analysis.virtues.notes}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {(goal.stoic_analysis.obstacles?.length || goal.stoic_analysis.strategies?.length) && (
+                <div>
+                  <h5 className="text-sm font-medium mb-2">Obstacles & Strategies</h5>
+                  <div className="grid grid-cols-2 gap-4">
+                    {goal.stoic_analysis.obstacles?.length && (
+                      <div>
+                        <h6 className="text-xs text-gray-500 mb-1">Potential Obstacles</h6>
+                        <ul className="text-sm space-y-1">
+                          {goal.stoic_analysis.obstacles.map((item, i) => (
+                            <li key={i} className="text-gray-600">{item}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    {goal.stoic_analysis.strategies?.length && (
+                      <div>
+                        <h6 className="text-xs text-gray-500 mb-1">Mitigation Strategies</h6>
+                        <ul className="text-sm space-y-1">
+                          {goal.stoic_analysis.strategies.map((item, i) => (
+                            <li key={i} className="text-gray-600">{item}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </>
           )}
 
-          {(goal.stoic_analysis.obstacles?.length || goal.stoic_analysis.strategies?.length) && (
-            <div>
-              <h5 className="text-sm font-medium mb-2">Obstacles & Strategies</h5>
-              <div className="grid grid-cols-2 gap-4">
-                {goal.stoic_analysis.obstacles?.length && (
-                  <div>
-                    <h6 className="text-xs text-gray-500 mb-1">Potential Obstacles</h6>
-                    <ul className="text-sm space-y-1">
-                      {goal.stoic_analysis.obstacles.map((item, i) => (
-                        <li key={i} className="text-gray-600">{item}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-                {goal.stoic_analysis.strategies?.length && (
-                  <div>
-                    <h6 className="text-xs text-gray-500 mb-1">Mitigation Strategies</h6>
-                    <ul className="text-sm space-y-1">
-                      {goal.stoic_analysis.strategies.map((item, i) => (
-                        <li key={i} className="text-gray-600">{item}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </div>
+          <div className="mt-6">
+            <h5 className="text-sm font-medium mb-3">Checkpoint Goals</h5>
+            <div className="space-y-3">
+              {isLoadingCheckpoints ? (
+                <div className="text-center py-4">
+                  <LoadingSpinner size="sm" />
+                </div>
+              ) : checkpointGoals[goal.id]?.length > 0 ? (
+                checkpointGoals[goal.id].map((checkpoint: CheckpointGoal) => (
+                  <CheckpointGoalCard 
+                    key={checkpoint.id} 
+                    goal={checkpoint}
+                    onUpdate={() => loadCheckpointGoals(checkpoint.big_goal_id)}
+                  />
+                ))
+              ) : (
+                <p className="text-sm text-gray-500">No checkpoint goals yet.</p>
+              )}
             </div>
-          )}
+          </div>
         </div>
       )}
     </div>

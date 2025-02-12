@@ -1,8 +1,8 @@
 import React from 'react';
 import { Plus, BookOpen } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import type { CheckpointGoal, BigGoal } from '../../types/planning';  // Add BigGoal type
 import BigGoalCard from './components/BigGoalCard';
-import CheckpointGoalCard from './components/CheckpointGoalCard';
+import { CheckpointGoalCard } from './components/CheckpointGoalCard';
 import DailySystemCard from './components/DailySystemCard';
 import AntiGoalCard from './components/AntiGoalCard';
 import MonthlyReviewCard from './components/MonthlyReviewCard';
@@ -28,13 +28,12 @@ const tabs = [
 function Planning() {
   const [activeTab, setActiveTab] = React.useState('big-goals');
   const [isAddModalOpen, setIsAddModalOpen] = React.useState(false);
-  const navigate = useNavigate();
-  const { userId } = useAuth();
+  const { userId } = useAuth();  // Remove navigate declaration
+
   const {
     bigGoals,
     checkpointGoals,
     dailySystems,
-    antiGoals,
     monthlyReview,
     isLoading,
     loadBigGoals,
@@ -47,18 +46,32 @@ function Planning() {
     createMonthlyReview
   } = usePlanning();
 
+  // Convert checkpointGoals object to array when needed
+  const allCheckpointGoals = React.useMemo(() => {
+    return Object.values(checkpointGoals).flat();
+  }, [checkpointGoals]);
+
   React.useEffect(() => {
     if (!userId) return;
     
-    loadBigGoals();
-    loadCheckpointGoals();
-    loadDailySystems();
-    
-    // Load current month's review
-    const currentMonth = new Date().toISOString().split('T')[0].substring(0, 7);
-    loadMonthlyReview(currentMonth);
-  }, [userId, loadBigGoals, loadCheckpointGoals, loadDailySystems, loadMonthlyReview]);
+    const loadInitialData = async () => {
+      await loadBigGoals();
+      const currentMonth = new Date().toISOString().split('T')[0].substring(0, 7);
+      await loadMonthlyReview(currentMonth);
+      await loadDailySystems();
+    };
 
+    loadInitialData();
+  }, [userId, loadBigGoals, loadDailySystems, loadMonthlyReview]);
+
+  // Separate useEffect for loading checkpoint goals
+  React.useEffect(() => {
+    if (!userId || bigGoals.length === 0) return;
+    
+    Promise.all(bigGoals.map(goal => loadCheckpointGoals(goal.id)));
+  }, [userId, bigGoals, loadCheckpointGoals]);
+
+  // Add handleAddItem function
   const handleAddItem = () => {
     setIsAddModalOpen(true);
   };
@@ -81,23 +94,6 @@ function Planning() {
                   goal={goal}
                   onUpdate={loadBigGoals}
                 />
-                
-                {/* Show related checkpoint goals */}
-                {checkpointGoals.filter(cp => cp.big_goal_id === goal.id).length > 0 && (
-                  <div className="pl-8 space-y-4">
-                    <h3 className="text-sm font-medium text-gray-500">Related Checkpoints</h3>
-                    {checkpointGoals
-                      .filter(cp => cp.big_goal_id === goal.id)
-                      .map(checkpoint => (
-                        <CheckpointGoalCard
-                          key={checkpoint.id}
-                          goal={checkpoint}
-                          onUpdate={loadCheckpointGoals}
-                        />
-                      ))
-                    }
-                  </div>
-                )}
               </div>
             ))}
           </div>
@@ -106,13 +102,21 @@ function Planning() {
       case 'checkpoints':
         return (
           <div className="space-y-6">
-            {checkpointGoals.map(goal => (
+            {allCheckpointGoals.map((goal: CheckpointGoal) => (
               <CheckpointGoalCard
                 key={goal.id}
                 goal={goal}
-                onUpdate={loadCheckpointGoals}
+                onUpdate={() => loadCheckpointGoals(goal.big_goal_id)}
               />
             ))}
+          </div>
+        );
+
+      // Remove duplicate anti-goals case and keep only this one
+      case 'anti-goals':
+        return (
+          <div className="text-center py-8">
+            <p className="text-gray-500">Anti-goals feature coming soon.</p>
           </div>
         );
 
@@ -129,17 +133,8 @@ function Planning() {
           </div>
         );
 
-      case 'anti-goals':
-        return (
-          <div className="space-y-6">
-            {antiGoals.map(goal => (
-              <AntiGoalCard
-                key={goal.id}
-                goal={goal}
-              />
-            ))}
-          </div>
-        );
+      // Remove this duplicate anti-goals case
+      // case 'anti-goals': ...
 
       case 'reviews':
         return monthlyReview ? (
@@ -190,7 +185,7 @@ function Planning() {
             isOpen={true}
             onClose={() => setIsAddModalOpen(false)}
             onSubmit={createDailySystem}
-            checkpointGoalId={checkpointGoals[0]?.id}
+            checkpointGoalId={allCheckpointGoals[0]?.id}  // Use allCheckpointGoals instead
           />
         );
 
@@ -199,7 +194,7 @@ function Planning() {
           <AntiGoalModal
             isOpen={true}
             onClose={() => setIsAddModalOpen(false)}
-            onSubmit={createBigGoal}
+            onSubmit={() => {}}  // Add empty function for now until anti-goals feature is implemented
           />
         );
 

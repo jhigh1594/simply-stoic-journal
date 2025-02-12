@@ -2,9 +2,9 @@ import React from 'react';
 import { Smile, Meh, Frown } from 'lucide-react';
 
 const moods = [
-  { icon: Smile, label: 'Positive' },
-  { icon: Meh, label: 'Neutral' },
   { icon: Frown, label: 'Challenging' },
+  { icon: Meh, label: 'Neutral' },
+  { icon: Smile, label: 'Positive' },
 ];
 
 interface MoodSelectorProps {

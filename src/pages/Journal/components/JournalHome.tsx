@@ -99,7 +99,7 @@ interface JournalHomeProps {
                     : 'Decision Analysis'}
                 </div>
                 <div className="text-sm text-gray-500">
-                  {new Date(entry.date).toLocaleDateString()}
+                  {new Date(entry.date).toLocaleDateString()} at {new Date(entry.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </div>
                 <div className="text-sm text-blue-600 group-hover:text-blue-700">View →</div>
               </button>

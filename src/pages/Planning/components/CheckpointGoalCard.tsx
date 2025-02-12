@@ -5,48 +5,22 @@ import { planningService } from '../../../services/planning';
 import LoadingSpinner from '../../../components/LoadingSpinner';
 import { usePlanning } from '../../../hooks/usePlanning';
 import { useAuth } from '../../../hooks/useAuth';
+import _ from 'lodash';
 
 interface CheckpointGoalCardProps {
   goal: CheckpointGoal;
   onUpdate: () => void;
+  showBigGoal?: boolean; // Add this prop to control big goal display
 }
 
-function CheckpointGoalCard({ goal, onUpdate }: CheckpointGoalCardProps) {
-  const [isExpanded, setIsExpanded] = React.useState(false);
+export const CheckpointGoalCard = ({ goal, onUpdate, showBigGoal = true }: CheckpointGoalCardProps) => {
+  // Remove the local isExpanded state
   const [isUpdating, setIsUpdating] = React.useState(false);
   const { bigGoals, loadBigGoals } = usePlanning();
   const { userId } = useAuth();
-
-  React.useEffect(() => {
-    if (!userId) return;
-    loadBigGoals();
-  }, [loadBigGoals, userId]);
-
-  const bigGoal = bigGoals.find(bg => bg.id === goal.big_goal_id);
-
-  const handleStatusChange = async (status: CheckpointGoal['status']) => {
-    try {
-      setIsUpdating(true);
-      await planningService.updateCheckpointGoal(goal.id, { status });
-      onUpdate();
-    } catch (error) {
-      console.error('Failed to update checkpoint status:', error);
-    } finally {
-      setIsUpdating(false);
-    }
-  };
-
-  const handleProgressChange = async (progress: number) => {
-    try {
-      setIsUpdating(true);
-      await planningService.updateCheckpointGoal(goal.id, { progress });
-      onUpdate();
-    } catch (error) {
-      console.error('Failed to update checkpoint progress:', error);
-    } finally {
-      setIsUpdating(false);
-    }
-  };
+  const [localProgress, setLocalProgress] = React.useState(goal.progress);
+  const [isProgressUpdating, setIsProgressUpdating] = React.useState(false);
+  const [isExpanded, setIsExpanded] = React.useState(true); // Set default to true
 
   const getStatusColor = (status: CheckpointGoal['status']) => {
     switch (status) {
@@ -60,6 +34,49 @@ function CheckpointGoalCard({ goal, onUpdate }: CheckpointGoalCardProps) {
         return 'bg-gray-50 text-gray-700';
     }
   };
+
+  // Load big goals only if we need to show the big goal reference
+  React.useEffect(() => {
+    if (!userId || !showBigGoal) return;
+    loadBigGoals();
+  }, [loadBigGoals, userId, showBigGoal]);
+
+  const bigGoal = React.useMemo(() => 
+    bigGoals.find(bg => bg.id === goal.big_goal_id),
+    [bigGoals, goal.big_goal_id]
+  );
+
+  const handleStatusChange = async (status: CheckpointGoal['status']) => {
+    try {
+      setIsUpdating(true);
+      await planningService.updateCheckpointGoal(goal.id, { status });
+      onUpdate();
+    } catch (error) {
+      console.error('Failed to update checkpoint status:', error);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  // Remove these duplicate declarations
+  // const [localProgress, setLocalProgress] = React.useState(goal.progress);
+  // const [isProgressUpdating, setIsProgressUpdating] = React.useState(false);
+
+  const debouncedUpdate = React.useCallback(
+    _.debounce(async (progress: number) => {
+      try {
+        setIsProgressUpdating(true);
+        await planningService.updateCheckpointGoal(goal.id, { progress });
+        // Remove the onUpdate call here since we don't need to refresh the entire list
+        // for progress updates
+      } catch (error) {
+        console.error('Failed to update checkpoint progress:', error);
+      } finally {
+        setIsProgressUpdating(false);
+      }
+    }, 500),
+    [goal.id] // Remove onUpdate from dependencies
+  );
 
   return (
     <div className="bg-white rounded-lg border hover:border-gray-300 transition-colors">
@@ -83,8 +100,8 @@ function CheckpointGoalCard({ goal, onUpdate }: CheckpointGoalCardProps) {
                 {new Date(goal.target_date).toLocaleDateString()}
               </span>
               <span className="text-gray-400">•</span>
-              <span className="text-gray-600">{goal.progress}% complete</span>
-              {bigGoal && (
+              <span className="text-gray-600">{localProgress}% complete</span>
+              {showBigGoal && bigGoal && (
                 <>
                   <span className="text-gray-400">•</span>
                   <span className="text-gray-600">Related to: {bigGoal.title}</span>
@@ -131,18 +148,31 @@ function CheckpointGoalCard({ goal, onUpdate }: CheckpointGoalCardProps) {
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Progress
               </label>
-              <input
-                type="range"
-                min="0"
-                max="100"
-                value={goal.progress}
-                onChange={(e) => handleProgressChange(parseInt(e.target.value))}
-                className="w-full"
-              />
-              <div className="flex justify-between text-xs text-gray-500">
-                <span>0%</span>
-                <span>{goal.progress}%</span>
-                <span>100%</span>
+              <div className="flex items-center gap-4">
+                <div className="flex-1">
+                  <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-blue-500 rounded-full transition-all"
+                      style={{ width: `${localProgress}%` }}
+                    />
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    value={localProgress}
+                    onChange={(e) => {
+                      const progress = Math.min(100, Math.max(0, parseInt(e.target.value) || 0));
+                      setLocalProgress(progress);
+                      debouncedUpdate(progress);
+                    }}
+                    className="w-16 text-sm border rounded-lg px-2 py-1 text-center"
+                  />
+                  <span className="text-sm text-gray-500">%</span>
+                  {isProgressUpdating && <LoadingSpinner size="sm" />} {/* Change from "xs" to "sm" */}
+                </div>
               </div>
             </div>
 
@@ -167,6 +197,4 @@ function CheckpointGoalCard({ goal, onUpdate }: CheckpointGoalCardProps) {
       )}
     </div>
   );
-}
-
-export default CheckpointGoalCard;
+};

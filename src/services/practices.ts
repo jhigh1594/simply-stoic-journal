@@ -40,9 +40,18 @@ export const practicesService = {
       .from('practices')
       .select('*')
       .order('created_at', { ascending: false });
-
+  
     if (error) throw error;
-    return Promise.all(practices.map(toPractice));
+    
+    // Remove duplicates based on title
+    const uniquePractices = practices.reduce((acc: DBPractice[], practice) => {
+      if (!acc.find(p => p.title === practice.title)) {
+        acc.push(practice);
+      }
+      return acc;
+    }, []);
+  
+    return Promise.all(uniquePractices.map(toPractice));
   },
 
   async getPractice(id: string) {
@@ -68,7 +77,7 @@ export const practicesService = {
     const likedBy = practice.liked_by || [];
     const isLiked = likedBy.includes(userId);
     const newLikedBy = isLiked
-      ? likedBy.filter(id => id !== userId)
+      ? likedBy.filter((id: string) => id !== userId)
       : [...likedBy, userId];
     const newLikes = isLiked ? practice.likes - 1 : practice.likes + 1;
 
@@ -100,5 +109,25 @@ export const practicesService = {
 
     if (error) throw error;
     return this.getPractice(practiceId);
+  },  // Add comma here
+
+  async createPractice(practice: Omit<Practice, 'id' | 'likes' | 'liked_by' | 'completions'>) {
+    const { data, error } = await supabase
+      .from('practices')
+      .insert({
+        title: practice.title,
+        description: practice.description,
+        instructions: practice.instructions,
+        tips: practice.tips,
+        category: practice.category,
+        is_community: false,
+        likes: 0,
+        created_at: new Date().toISOString()
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+    return toPractice(data);
   }
 };

@@ -1,3 +1,5 @@
+import { ReflectionType } from './planning';
+
 export type Json =
   | string
   | number
@@ -244,6 +246,260 @@ export interface Database {
           user_id?: string
           notes?: string | null
           completed_at?: string
+        }
+      }
+      big_goals: {
+        Row: {
+          id: string
+          user_id: string
+          title: string
+          description: string | null
+          category: string
+          target_date: string
+          status: 'not_started' | 'in_progress' | 'completed'
+          stoic_analysis: Json
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          title: string
+          description?: string | null
+          category: string
+          target_date: string
+          status?: 'not_started' | 'in_progress' | 'completed'
+          stoic_analysis?: Json
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          title?: string
+          description?: string | null
+          category?: string
+          target_date?: string
+          status?: 'not_started' | 'in_progress' | 'completed'
+          stoic_analysis?: Json
+          created_at?: string
+          updated_at?: string
+        }
+      }
+
+      checkpoint_goals: {
+        Row: {
+          id: string
+          big_goal_id: string
+          user_id: string
+          title: string
+          description: string | null
+          target_date: string
+          progress: number
+          status: 'not_started' | 'in_progress' | 'completed'
+          blockers: string[]
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          big_goal_id: string
+          user_id: string
+          title: string
+          description?: string | null
+          target_date: string
+          progress?: number
+          status?: 'not_started' | 'in_progress' | 'completed'
+          blockers?: string[]
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          big_goal_id?: string
+          user_id?: string
+          title?: string
+          description?: string | null
+          target_date?: string
+          progress?: number
+          status?: 'not_started' | 'in_progress' | 'completed'
+          blockers?: string[]
+          created_at?: string
+          updated_at?: string
+        }
+      }
+
+      daily_systems: {
+        Row: {
+          id: string
+          user_id: string
+          title: string
+          description: string | null
+          checkpoint_goal_id: string | null
+          frequency: string
+          time_of_day: string | null
+          active: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          title: string
+          description?: string | null
+          checkpoint_goal_id?: string | null
+          frequency: string
+          time_of_day?: string | null
+          active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          title?: string
+          description?: string | null
+          checkpoint_goal_id?: string | null
+          frequency?: string
+          time_of_day?: string | null
+          active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+      }
+
+      abc_tracking: {
+        Row: {
+          id: string
+          user_id: string
+          date: string
+          category: string
+          description: string
+          system_id: string | null
+          energy_level: number | null
+          notes: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          date: string
+          category: string
+          description: string
+          system_id?: string | null
+          energy_level?: number | null
+          notes?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          date?: string
+          category?: string
+          description?: string
+          system_id?: string | null
+          energy_level?: number | null
+          notes?: string | null
+          created_at?: string
+        }
+      },
+
+      goal_reflections: {
+        Row: {
+          id: string
+          user_id: string
+          goal_id: string
+          reflection_type: ReflectionType
+          obstacles: string[]
+          strategies: string[]
+          progress_rating: number
+          notes: string | null
+          control_analysis: {
+            within_control: string[]
+            partial_control: string[]
+            outside_control: string[]
+            reflections: string
+          }
+          virtue_alignment: string[] | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          goal_id: string
+          reflection_type: ReflectionType
+          obstacles?: string[]
+          strategies?: string[]
+          progress_rating: number
+          notes?: string | null
+          control_analysis: {
+            within_control: string[]
+            partial_control: string[]
+            outside_control: string[]
+            reflections: string[]
+          }
+          virtue_alignment?: string[] | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          goal_id?: string
+          reflection_type?: ReflectionType
+          obstacles?: string[]
+          strategies?: string[]
+          progress_rating?: number
+          notes?: string | null
+          control_analysis?: {
+            within_control: string[]
+            partial_control: string[]
+            outside_control: string[]
+            reflections: string[]
+          }
+          virtue_alignment?: string[] | null
+          created_at?: string
+          updated_at?: string
+        }
+      },
+
+      monthly_reviews: {
+        Row: {
+          id: string
+          user_id: string
+          month: string
+          stoic_reflection: string | null
+          wins: string[]
+          learnings: string[]
+          improvements: string[]
+          next_month_focus: string[]
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          month: string
+          stoic_reflection?: string | null
+          wins?: string[]
+          learnings?: string[]
+          improvements?: string[]
+          next_month_focus?: string[]
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          month?: string
+          stoic_reflection?: string | null
+          wins?: string[]
+          learnings?: string[]
+          improvements?: string[]
+          next_month_focus?: string[]
+          created_at?: string
+          updated_at?: string
         }
       }
     }

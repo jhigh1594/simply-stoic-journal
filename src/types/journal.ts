@@ -23,6 +23,10 @@ export interface EveningReviewContent {
     challenges: string;
     approach: string;
   };
+  priorityReview: {
+    completedPriorities: string[];
+    reflection: string;
+  };
 }
 
 export interface JournalEntry {

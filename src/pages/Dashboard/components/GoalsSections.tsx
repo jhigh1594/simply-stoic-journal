@@ -5,10 +5,12 @@ import { usePlanning } from '../../../hooks/usePlanning';
 import { useAuth } from '../../../hooks/useAuth';
 import LoadingSpinner from '../../../components/LoadingSpinner';
 import ABCTrackingModal from '../../Planning/components/ABCTrackingModal';
+import { planningService } from '../../../services/planning';
 
 function GoalsSections() {
   const navigate = useNavigate();
   const [isABCModalOpen, setIsABCModalOpen] = React.useState(false);
+  const initialLoadRef = React.useRef(false);
   const { 
     bigGoals,
     checkpointGoals,
@@ -26,24 +28,34 @@ function GoalsSections() {
   const { userId } = useAuth();
 
   React.useEffect(() => {
-    if (!userId) return;
+    if (!userId || initialLoadRef.current) return;
     
-    // Load all planning data
-    loadBigGoals();
-    loadCheckpointGoals();
-    loadDailySystems();
-    
-    // Load today's ABC tracking
-    const today = new Date().toISOString().split('T')[0];
-    loadABCTracking(today);
-    
-    // Load current month's review
-    const currentMonth = today.substring(0, 7);
-    loadMonthlyReview(currentMonth);
+    const loadInitialData = async () => {
+      try {
+        await Promise.all([
+          loadBigGoals(),
+          loadDailySystems(),
+          loadABCTracking(new Date().toISOString().split('T')[0]),
+          loadMonthlyReview(new Date().toISOString().substring(0, 7))
+        ]);
+
+        // Load checkpoints after big goals are loaded
+        bigGoals
+          .filter(goal => goal.status === 'in_progress')
+          .forEach(goal => loadCheckpointGoals(goal.id));
+
+        initialLoadRef.current = true;
+      } catch (error) {
+        console.error('Error loading planning data:', error);
+      }
+    };
+
+    loadInitialData();
   }, [userId, loadBigGoals, loadCheckpointGoals, loadDailySystems, loadABCTracking, loadMonthlyReview]);
 
   const activeBigGoals = bigGoals.filter(goal => goal.status === 'in_progress');
-  const upcomingCheckpoints = checkpointGoals
+  const upcomingCheckpoints = Object.values(checkpointGoals)
+    .flat()
     .filter(goal => goal.status !== 'completed')
     .sort((a, b) => new Date(a.target_date).getTime() - new Date(b.target_date).getTime())
     .slice(0, 3);
@@ -162,12 +174,31 @@ function GoalsSections() {
               <div key={checkpoint.id} className="flex items-center gap-4">
                 <div className="flex-1">
                   <div className="font-medium mb-1">{checkpoint.title}</div>
-                  <div className="flex items-center gap-2 text-sm">
-                    <span className="text-gray-500">
-                      Due {new Date(checkpoint.target_date).toLocaleDateString()}
-                    </span>
-                    <span className="text-gray-400">•</span>
-                    <span className="text-gray-500">{checkpoint.progress}% complete</span>
+                  <div className="flex items-center gap-4">
+                    <div className="flex-1">
+                      <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-blue-500 rounded-full transition-all"
+                          style={{ width: `${checkpoint.progress}%` }}
+                        />
+                      </div>
+                    </div>
+                    <input
+                      type="number"
+                      min="0"
+                      max="100"
+                      value={checkpoint.progress}
+                      onChange={async (e) => {
+                        const progress = Math.min(100, Math.max(0, parseInt(e.target.value) || 0));
+                        await planningService.updateCheckpointGoal(checkpoint.id, { progress });
+                        loadCheckpointGoals(checkpoint.big_goal_id);
+                      }}
+                      className="w-16 text-sm border rounded-lg px-2 py-1 text-center"
+                    />
+                    <span className="text-sm text-gray-500">%</span>
+                  </div>
+                  <div className="text-sm text-gray-500 mt-1">
+                    Due {new Date(checkpoint.target_date).toLocaleDateString()}
                   </div>
                 </div>
               </div>
