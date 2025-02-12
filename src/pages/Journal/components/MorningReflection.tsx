@@ -215,39 +215,63 @@ export const MorningReflection: React.FC<MorningReflectionProps> = ({
       <section>
         <h2 className="text-xl font-semibold mb-4">Gratitude</h2>
         <div className="space-y-4">
-          {gratitudeList.map((item, index) => (
-            <div key={index} className="flex gap-2">
-              <input
-                ref={el => gratitudeRefs.current[index] = el}
-                type="text"
-                value={item}
-                onChange={(e) => {
-                  const newList = [...gratitudeList];
-                  newList[index] = e.target.value;
-                  onGratitudeListChange(newList);
-                }}
-                onKeyDown={(e) => handleKeyDown(e, 'gratitude', index)}
-                placeholder="I am grateful for..."
-                className="flex-1 p-2 border rounded"
-              />
-              <button
-                onClick={() => {
-                  const newList = gratitudeList.filter((_, i) => i !== index);
-                  onGratitudeListChange(newList);
-                }}
-                className="flex-shrink-0 text-red-500 hover:text-red-700"
-              >
-                Remove
-              </button>
-            </div>
-          ))}
-          {gratitudeList.length < 3 && (
-            <button
-              onClick={() => onGratitudeListChange([...gratitudeList, ''])}
-              className="text-blue-500 hover:text-blue-700"
-            >
-              Add Gratitude Item
-            </button>
+          {gratitudeList.length === 0 ? (
+            <input
+              type="text"
+              placeholder="I am grateful for..."
+              className="w-full p-2 border rounded"
+              onFocus={() => {
+                setGratitudeList(['']);
+                onGratitudeListChange(['']);
+              }}
+              onChange={(e) => {
+                setGratitudeList([e.target.value]);
+                onGratitudeListChange([e.target.value]);
+              }}
+            />
+          ) : (
+            <>
+              {gratitudeList.map((item, index) => (
+                <div key={index} className="flex gap-2">
+                  <input
+                    ref={el => gratitudeRefs.current[index] = el}
+                    type="text"
+                    value={item}
+                    onChange={(e) => {
+                      const newList = [...gratitudeList];
+                      newList[index] = e.target.value;
+                      setGratitudeList(newList);
+                      onGratitudeListChange(newList);
+                    }}
+                    onKeyDown={(e) => handleKeyDown(e, 'gratitude', index)}
+                    placeholder="I am grateful for..."
+                    className="flex-1 p-2 border rounded"
+                  />
+                  <button
+                    onClick={() => {
+                      const newList = gratitudeList.filter((_, i) => i !== index);
+                      setGratitudeList(newList);
+                      onGratitudeListChange(newList);
+                    }}
+                    className="flex-shrink-0 text-red-500 hover:text-red-700"
+                  >
+                    Remove
+                  </button>
+                </div>
+              ))}
+              {gratitudeList.length < 3 && (
+                <button
+                  onClick={() => {
+                    const newList = [...gratitudeList, ''];
+                    setGratitudeList(newList);
+                    onGratitudeListChange(newList);
+                  }}
+                  className="text-blue-500 hover:text-blue-700"
+                >
+                  Add Gratitude Item
+                </button>
+              )}
+            </>
           )}
         </div>
       </section>
@@ -255,35 +279,47 @@ export const MorningReflection: React.FC<MorningReflectionProps> = ({
       <section>
         <h2 className="text-xl font-semibold mb-4">Today's Priorities</h2>
         <div className="space-y-4">
-          {editPriorities.map((priority: string, index: number) => (
-            <div key={index} className="flex gap-2">
-              <input
-                ref={el => priorityRefs.current[index] = el}
-                type="text"
-                value={priority}
-                onChange={(e) => {
-                  const newPriorities = [...editPriorities];
-                  newPriorities[index] = e.target.value;
-                  setEditPriorities(newPriorities);
-                  debouncedPriorityUpdate(newPriorities);
-                }}
-                onKeyDown={(e) => handleKeyDown(e, 'priority', index)}
-                placeholder="Enter a priority..."
-                className="flex-1 p-2 border rounded"
-              />
-              <button
-                onClick={() => {
-                  const newPriorities = editPriorities.filter((_, i) => i !== index);
-                  setEditPriorities(newPriorities);
-                  debouncedPriorityUpdate(newPriorities);
-                }}
-                className="flex-shrink-0 text-red-500 hover:text-red-700"
-              >
-                Remove
-              </button>
-            </div>
-          ))}
-          {editPriorities.length < 3 && (
+          {editPriorities.length > 0 ? (
+            editPriorities.map((priority: string, index: number) => (
+              <div key={index} className="flex gap-2">
+                <input
+                  ref={el => priorityRefs.current[index] = el}
+                  type="text"
+                  value={priority}
+                  onChange={(e) => {
+                    const newPriorities = [...editPriorities];
+                    newPriorities[index] = e.target.value;
+                    setEditPriorities(newPriorities);
+                    debouncedPriorityUpdate(newPriorities);
+                  }}
+                  onKeyDown={(e) => handleKeyDown(e, 'priority', index)}
+                  placeholder="Enter a priority..."
+                  className="flex-1 p-2 border rounded"
+                />
+                <button
+                  onClick={() => {
+                    const newPriorities = editPriorities.filter((_, i) => i !== index);
+                    setEditPriorities(newPriorities);
+                    debouncedPriorityUpdate(newPriorities);
+                  }}
+                  className="flex-shrink-0 text-red-500 hover:text-red-700"
+                >
+                  Remove
+                </button>
+              </div>
+            ))
+          ) : (
+            <input
+              type="text"
+              placeholder="Enter a priority..."
+              className="w-full p-2 border rounded"
+              onFocus={() => {
+                setEditPriorities(['']);
+                debouncedPriorityUpdate(['']);
+              }}
+            />
+          )}
+          {editPriorities.length > 0 && editPriorities.length < 3 && (
             <button
               onClick={() => {
                 const newPriorities = [...editPriorities, ''];
