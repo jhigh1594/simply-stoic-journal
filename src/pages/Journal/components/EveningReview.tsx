@@ -253,6 +253,7 @@ function EveningReview({ onContentChange, initialContent, onOpenPromptLibrary, o
                   })
                   .run();
               }}
+              model="gemini-2.0-pro-exp-02-05"
               key="mainEditorPrompt"
             />
           </div>

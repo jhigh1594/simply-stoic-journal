@@ -1,72 +1,12 @@
 import { genAI } from './gemini-config.ts';  // Add .ts extension
 import type { EveningReviewContent, AIInsights } from '../types/journal';
 import { createJournalPrompt } from './prompts/journalPrompt';
+import { MODEL_NAME } from './gemini-config';
 
-// Helper to ensure consistent prompt structure
-const createStructuredPrompt = (type: 'journal' | 'decision', content: string) => {
-  const prompts = {
-    journal: `
-      Analyze this journal entry from a Stoic perspective and provide insights in the following format:
-      {
-        "summary": "A brief, focused summary of the key points",
-        "themes": ["3-5 main themes, focusing on Stoic principles"],
-        "recommendations": [
-          "3 actionable Stoic recommendations",
-          "Each should be specific and tied to the content",
-          "Focus on practical application"
-        ],
-        "stoic_analysis": "A deeper analysis connecting the entry to Stoic principles, focusing on wisdom, justice, courage, and temperance"
-      }
-
-      Important guidelines:
-      - Keep responses concise and actionable
-      - Focus on Stoic principles and practical application
-      - Maintain a supportive, growth-oriented tone
-      - Avoid generic advice
-      - Connect insights to specific content
-
-      Journal entry:
-      ${content}
-    `,
-    decision: `
-      Analyze this decision through a Stoic lens and provide structured guidance:
-      {
-        "dichotomy_of_control": {
-          "within_control": ["List factors fully within control"],
-          "partial_control": ["List factors with limited influence"],
-          "outside_control": ["List factors beyond control"],
-          "reflection": "Brief analysis of control aspects"
-        },
-        "virtue_analysis": {
-          "wisdom": "How this decision tests/builds wisdom",
-          "justice": "How this decision affects others",
-          "courage": "What courage means in this context",
-          "temperance": "How moderation applies here"
-        },
-        "recommendations": [
-          "3 specific, actionable recommendations",
-          "Based on Stoic principles",
-          "Focused on what's within control"
-        ]
-      }
-
-      Decision context:
-      ${content}
-    `
-  };
-
-  return prompts[type];
-};
-
-// Remove this interface since we're now using AIInsights from types/journal
-interface JournalInsights {
-  analysis: string;
-  timestamp: string;
-}
-
+// Update each function to use the new model
 export async function generateJournalInsights(content: string | EveningReviewContent, type: 'morning' | 'evening' = 'morning'): Promise<AIInsights> {
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+    const model = genAI.getGenerativeModel({ model: MODEL_NAME });
 
     let prompt = '';
     let contentToAnalyze = '';
@@ -127,8 +67,42 @@ export interface DecisionAnalysisResult {
   recommendations: string[];
 }
 
+// Export the helper function
+export const createStructuredPrompt = (type: 'journal' | 'decision', content: string) => {
+  const prompts = {
+    journal: `
+      Analyze this journal entry from a Stoic perspective and provide insights in the following format:
+      {
+        "summary": "A brief, focused summary of the key points",
+        "themes": ["3-5 main themes, focusing on Stoic principles"],
+        "recommendations": [
+          "3 actionable Stoic recommendations",
+          "Each should be specific and tied to the content",
+          "Focus on practical application"
+        ],
+        "stoic_analysis": "A deeper analysis connecting the entry to Stoic principles, focusing on wisdom, justice, courage, and temperance"
+      }
+    `,
+    decision: `
+      Analyze this decision from a Stoic perspective and provide insights in the following format:
+      {
+        "summary": "A brief, focused summary of the key points",
+        "themes": ["3-5 main themes, focusing on Stoic principles"],
+        "recommendations": [
+          "3 actionable Stoic recommendations",
+          "Each should be specific and tied to the content",
+          "Focus on practical application"
+        ],
+        "stoic_analysis": "A deeper analysis connecting the entry to Stoic principles, focusing on wisdom, justice, courage, and temperance"
+      }
+    `,
+  };
+
+  return prompts[type] + "\n\nContent to analyze:\n" + content;
+};
+
 export async function generateDecisionAnalysis(content: string): Promise<DecisionAnalysisResult> {
-  const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+  const model = genAI.getGenerativeModel({ model: MODEL_NAME });
 
   try {
     const prompt = createStructuredPrompt('decision', content);
@@ -144,7 +118,7 @@ export async function generateDecisionAnalysis(content: string): Promise<Decisio
 }
 
 export async function enhanceGoalDescription(description: string): Promise<string> {
-  const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+  const model = genAI.getGenerativeModel({ model: MODEL_NAME });
 
   const prompt = `
     Enhance this goal description using best practices for effective goal definition. 
@@ -171,7 +145,7 @@ export async function enhanceGoalDescription(description: string): Promise<strin
 }
 
 export async function generateReflectionPrompt(content: string): Promise<string> {
-  const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+  const model = genAI.getGenerativeModel({ model: MODEL_NAME });
 
   try {
     const prompt = createJournalPrompt(content);

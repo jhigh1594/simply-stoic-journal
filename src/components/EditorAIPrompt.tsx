@@ -6,9 +6,14 @@ import { Sparkles } from 'lucide-react';
 interface EditorAIPromptProps {
   editor: Editor | null;
   onPromptGenerated?: (prompt: string) => void;
+  model?: string;
 }
 
-export const EditorAIPrompt: React.FC<EditorAIPromptProps> = ({ editor, onPromptGenerated }) => {
+export const EditorAIPrompt: React.FC<EditorAIPromptProps> = ({ 
+  editor, 
+  onPromptGenerated,
+  model = "gemini-2.0-pro-exp-02-05"  // Default to experimental model
+}) => {
   const [isGenerating, setIsGenerating] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 

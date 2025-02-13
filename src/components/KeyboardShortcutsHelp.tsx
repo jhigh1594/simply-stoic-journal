@@ -7,7 +7,7 @@ const shortcuts = [
   {
     category: 'General',
     items: [
-      { keys: ['Shift', '?'], description: 'Show/hide keyboard shortcuts' },
+      { keys: ['/'], description: 'Show/hide keyboard shortcuts' }, // Already correct
     ]
   },
   {
@@ -15,7 +15,7 @@ const shortcuts = [
     items: [
       { keys: [isMac ? '⌘' : 'Ctrl', 'D'], description: 'Go to Dashboard' },
       { keys: [isMac ? '⌘' : 'Ctrl', 'J'], description: 'Go to Journal' },
-      { keys: [isMac ? '⌘' : 'Ctrl', 'C'], description: 'Go to Calendar' },
+      // Remove Calendar shortcut
       { keys: [isMac ? '⌘' : 'Ctrl', 'P'], description: 'Go to Planning' },
       { keys: [isMac ? '⌘' : 'Ctrl', 'L'], description: 'Go to Library' },
     ]

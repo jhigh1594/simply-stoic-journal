@@ -105,30 +105,36 @@ export const MorningReflection: React.FC<MorningReflectionProps> = ({
 
   // Add handler for prompt selection
   // Update the handlePromptSelect function
+  // Update the handlePromptSelect function to use the provided prop
   const handlePromptSelect = React.useCallback((prompt: string) => {
-    mainEditor?.chain()
-      .focus()
-      .createParagraphNear()
-      .insertContent({
-        type: 'paragraph',
-        content: [{
-          type: 'text',
-          marks: [{ type: 'bold' }],
-          text: prompt
-        }]
-      })
-      .insertContent({
-        type: 'paragraph',
-        content: [{ type: 'text', text: '' }]
-      })
-      .run();
-  }, [mainEditor]);
+    if (onPromptSelect) {
+      onPromptSelect(prompt);
+    } else {
+      mainEditor?.chain()
+        .focus()
+        .createParagraphNear()
+        .insertContent({
+          type: 'paragraph',
+          content: [{
+            type: 'text',
+            marks: [{ type: 'bold' }],
+            text: prompt
+          }]
+        })
+        .insertContent({
+          type: 'paragraph',
+          content: [{ type: 'text', text: '' }]
+        })
+        .run();
+    }
+  }, [mainEditor, onPromptSelect]);
 
-  // Update how we use the EditorAIPrompt component
+  // Update EditorAIPrompt usage
   <EditorAIPrompt 
     editor={mainEditor}
     onPromptGenerated={handlePromptSelect}
-    key="mainEditorPrompt" // Add a key to ensure single instance
+    model="gemini-2.0-pro-exp-02-05"
+    key="mainEditorPrompt"
   />
   return (
     <div className="space-y-8">
@@ -262,7 +268,7 @@ export const MorningReflection: React.FC<MorningReflectionProps> = ({
                     // Focus the new input on the next render
                     setTimeout(() => {
                       const inputs = document.querySelectorAll('input[placeholder="I am grateful for..."]');
-                      inputs[inputs.length - 1]?.focus();
+                      (inputs[inputs.length - 1] as HTMLInputElement)?.focus();
                     }, 0);
                   }
                 }}
@@ -316,7 +322,7 @@ export const MorningReflection: React.FC<MorningReflectionProps> = ({
                     // Focus the new input on the next render
                     setTimeout(() => {
                       const inputs = document.querySelectorAll('input[placeholder="Priority..."]');
-                      inputs[inputs.length - 1]?.focus();
+                      (inputs[inputs.length - 1] as HTMLInputElement)?.focus();
                     }, 0);
                   }
                 }}

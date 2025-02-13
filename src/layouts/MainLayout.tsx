@@ -2,7 +2,7 @@ import React from 'react';
 import { Outlet } from 'react-router-dom';
 import { Menu } from 'lucide-react';
 import Sidebar from '../components/Sidebar';
-import { useGlobalKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
+import { useGlobalKeyboardShortcuts } from '../hooks/useKeyboardShortcut';  // Updated path
 import { useKeyboardShortcut } from '../hooks/useKeyboardShortcut';
 import KeyboardShortcutsHelp from '../components/KeyboardShortcutsHelp';
 import { Toaster } from 'react-hot-toast';
@@ -13,8 +13,7 @@ function MainLayout() {
   useGlobalKeyboardShortcuts();
 
   useKeyboardShortcut({
-    key: '?',
-    shiftKey: true,
+    key: '/',
     handler: () => setIsShortcutsHelpOpen(prev => !prev)
   });
 
