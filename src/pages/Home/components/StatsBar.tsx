@@ -1,6 +1,7 @@
 import React from 'react';
 import { useJournal } from '../../../hooks/useJournal';
 import { useAuth } from '../../../hooks/useAuth';
+import type { JournalEntry } from '../../../types/journal';
 
 const calculateStreak = (entries: JournalEntry[]) => {
   if (!entries.length) return 0;

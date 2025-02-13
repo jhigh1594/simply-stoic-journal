@@ -6,7 +6,7 @@ import { useKeyboardShortcut } from '../../../hooks/useKeyboardShortcut';
 interface AntiGoalModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (goal: Omit<AntiGoal, 'id' | 'created_at' | 'updated_at'>) => void;
+  onSubmit: (goal: Omit<AntiGoal, 'id' | 'created_at' | 'updated_at' | 'user_id'>) => void;
 }
 
 function AntiGoalModal({ isOpen, onClose, onSubmit }: AntiGoalModalProps) {
@@ -47,10 +47,10 @@ function AntiGoalModal({ isOpen, onClose, onSubmit }: AntiGoalModalProps) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-xl w-full max-w-xl">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 overflow-y-auto">
+      <div className="bg-white rounded-xl w-full max-w-xl my-8">
         <form onSubmit={handleSubmit}>
-          <div className="p-6 border-b">
+          <div className="p-6 border-b sticky top-0 bg-white rounded-t-xl z-10">
             <div className="flex justify-between items-center">
               <div className="flex items-center gap-2">
                 <AlertTriangle className="h-5 w-5" />
@@ -66,7 +66,7 @@ function AntiGoalModal({ isOpen, onClose, onSubmit }: AntiGoalModalProps) {
             </div>
           </div>
 
-          <div className="p-6 space-y-6">
+          <div className="p-6 space-y-6 max-h-[calc(100vh-16rem)] overflow-y-auto">
             <div>
               <label className="block font-medium mb-2">Title</label>
               <input
@@ -131,20 +131,22 @@ function AntiGoalModal({ isOpen, onClose, onSubmit }: AntiGoalModalProps) {
             </div>
           </div>
 
-          <div className="p-6 border-t flex justify-end gap-3">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 text-gray-600 hover:text-gray-800"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800"
-            >
-              Create Anti-Goal
-            </button>
+          <div className="p-6 border-t sticky bottom-0 bg-white rounded-b-xl">
+            <div className="flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-4 py-2 text-gray-600 hover:text-gray-800"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800"
+              >
+                Create Anti-Goal
+              </button>
+            </div>
           </div>
         </form>
       </div>

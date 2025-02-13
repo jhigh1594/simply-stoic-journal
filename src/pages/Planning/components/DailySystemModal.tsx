@@ -1,9 +1,9 @@
 import React from 'react';
-import { X, Clock, Calendar, Target } from 'lucide-react';
+import { X, Clock, Calendar } from 'lucide-react';
 import type { DailySystem, Frequency, TimeOfDay } from '../../../types/planning';
-import { useKeyboardShortcut } from '../../../hooks/useKeyboardShortcut';
 import { usePlanning } from '../../../hooks/usePlanning';
 import { useAuth } from '../../../hooks/useAuth';
+import { planningService } from '../../../services/planning';
 import ABCLevelBadge from '../../../components/ABCLevelBadge';
 
 interface DailySystemModalProps {
@@ -27,29 +27,16 @@ function DailySystemModal({ isOpen, onClose, onSubmit, checkpointGoalId }: Daily
   const { userId } = useAuth();
 
   React.useEffect(() => {
-    if (!userId) return;
-    loadCheckpointGoals();
-  }, [loadCheckpointGoals, userId]);
-
-  React.useEffect(() => {
-    setSelectedCheckpointId(checkpointGoalId);
-  }, [checkpointGoalId]);
-
-  // Keyboard shortcuts
-  useKeyboardShortcut({
-    key: 'Enter',
-    metaOrCtrlKey: true,
-    handler: () => {
-      if (isOpen && title && levelA && levelB && levelC) handleSubmit(new Event('submit') as any);
-    }
-  });
-
-  useKeyboardShortcut({
-    key: 'Escape',
-    handler: () => {
-      if (isOpen) onClose();
-    }
-  });
+    if (!userId || !checkpointGoalId) return;
+    // Get the big goal ID from the checkpoint goal ID
+    const loadData = async () => {
+      const bigGoals = await planningService.getBigGoals();
+      for (const goal of bigGoals) {
+        await loadCheckpointGoals(goal.id);
+      }
+    };
+    loadData();
+  }, [loadCheckpointGoals, userId, checkpointGoalId]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -59,12 +46,7 @@ function DailySystemModal({ isOpen, onClose, onSubmit, checkpointGoalId }: Daily
       checkpoint_goal_id: selectedCheckpointId,
       frequency,
       time_of_day: timeOfDay || undefined,
-      active: true,
-      execution_levels: {
-        A: levelA,
-        B: levelB,
-        C: levelC
-      }
+      active: true
     });
     onClose();
   };
@@ -95,16 +77,18 @@ function DailySystemModal({ isOpen, onClose, onSubmit, checkpointGoalId }: Daily
             <div>
               <label className="block font-medium mb-2">Supports Checkpoint</label>
               <select
-                value={selectedCheckpointId}
+                value={selectedCheckpointId || ''}
                 onChange={(e) => setSelectedCheckpointId(e.target.value)}
                 className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-black"
               >
                 <option value="">None</option>
-                {checkpointGoals.map(goal => (
-                  <option key={goal.id} value={goal.id}>
-                    {goal.title}
-                  </option>
-                ))}
+                {Object.values(checkpointGoals)
+                  .flat()
+                  .map(goal => (
+                    <option key={goal.id} value={goal.id}>
+                      {goal.title}
+                    </option>
+                  ))}
               </select>
             </div>
 

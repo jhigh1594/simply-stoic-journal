@@ -123,13 +123,21 @@ function Planning() {
       case 'systems':
         return (
           <div className="space-y-6">
-            {dailySystems.map(system => (
-              <DailySystemCard
-                key={system.id}
-                system={system}
-                onUpdate={loadDailySystems}
-              />
-            ))}
+            {isLoading ? (
+              <p className="text-center text-gray-500 py-8">Loading daily systems...</p>
+            ) : dailySystems?.length ? (
+              dailySystems.map(system => (
+                <DailySystemCard
+                  key={system.id}
+                  system={system}
+                  onUpdate={loadDailySystems}
+                />
+              ))
+            ) : (
+              <div className="text-center text-gray-500 py-8">
+                No daily systems yet. Add one to get started.
+              </div>
+            )}
           </div>
         );
 

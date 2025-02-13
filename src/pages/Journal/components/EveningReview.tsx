@@ -5,60 +5,28 @@ import { motion } from 'framer-motion'
 import { Bold, Italic, List, Quote } from 'lucide-react'
 import type { EveningReviewContent } from '../../../types/journal'
 import { usePriorities } from '../../../hooks/usePriorities';
-import { planningService } from '../../../services/planning';  // Add this import at the top
-import type { BigGoal, CheckpointGoal } from '../../../types/planning';  // Add this import
 
 interface EveningReviewProps {
   onContentChange?: (content: EveningReviewContent) => void;
   initialContent?: EveningReviewContent;
   onOpenPromptLibrary?: () => void;
-  onPromptSelect?: (prompt: string) => void;  // Add this prop
 }
 
 // Near the top of the file, after imports
-function EveningReview({ onContentChange, initialContent, onOpenPromptLibrary, onPromptSelect }: EveningReviewProps) {
+function EveningReview({ onContentChange, initialContent, onOpenPromptLibrary }: EveningReviewProps) {
   // Update priorities hook usage to match DailyPriorities
   const today = new Date().toISOString().split('T')[0];
   const { priorities, isLoading, loadPriorities, togglePriority } = usePriorities();
   
-  // Add state for goals
-  const [bigGoals, setBigGoals] = React.useState<BigGoal[]>([]);
-  const [checkpointGoals, setCheckpointGoals] = React.useState<{ [key: string]: CheckpointGoal[] }>({});
-
-  // Add effect to load goals
-  React.useEffect(() => {
-    const loadGoals = async () => {
-      try {
-        const goals = await planningService.getBigGoals();
-        setBigGoals(goals);
-        
-        // Fetch checkpoint goals for each big goal
-        const checkpointMap: { [key: string]: CheckpointGoal[] } = {};
-        for (const goal of goals) {
-          const checkpoints = await planningService.getCheckpointGoals(goal.id);
-          checkpointMap[goal.id] = checkpoints;
-        }
-        setCheckpointGoals(checkpointMap);
-      } catch (error) {
-        console.error('Error loading goals:', error);
-      }
-    };
-
-    loadGoals();
-  }, []);
-
+  // Remove goals-related state and effects
+  
   // Load priorities when component mounts
   React.useEffect(() => {
     loadPriorities(today);
   }, [loadPriorities, today]);
 
-  // Rest of component logic
-  // Add debug with more info
-  React.useEffect(() => {
-    console.log('Date being used:', today);
-    console.log('Priorities data:', priorities);
-  }, [priorities, today]);
-
+  // Remove debug effect
+  
   const [completedPriorities, setCompletedPriorities] = React.useState<string[]>(
     initialContent?.priorityReview?.completedPriorities || []
   );
@@ -296,10 +264,10 @@ function EveningReview({ onContentChange, initialContent, onOpenPromptLibrary, o
       {/* Update Priority Review section */}
       <section>
         <h2 className="text-xl font-semibold mb-4">🎯 Today's Priorities Review</h2>
-        {isLoading ? (
-          <p className="text-gray-500">Loading priorities...</p>
-        ) : priorities?.priorities?.length ? (
-          <div className="space-y-6">
+        <div className="space-y-6">
+          {isLoading ? (
+            <p className="text-gray-500">Loading priorities...</p>
+          ) : priorities?.priorities?.length ? (
             <div className="space-y-4">
               {priorities.priorities.map((priority, index) => {
                 const isCompleted = priorities.completedPriorities.includes(priority);
@@ -310,7 +278,6 @@ function EveningReview({ onContentChange, initialContent, onOpenPromptLibrary, o
                       checked={isCompleted}
                       onChange={() => {
                         togglePriority(priority, !isCompleted);
-                        // Update local state for the form
                         const newCompletedPriorities = isCompleted
                           ? completedPriorities.filter(p => p !== priority)
                           : [...completedPriorities, priority];
@@ -324,20 +291,20 @@ function EveningReview({ onContentChange, initialContent, onOpenPromptLibrary, o
                     </span>
                   </div>
                 );
-              })}  {/* Added missing closing brace and parenthesis */}
+              })}
             </div>
+          ) : (
+            <p className="text-gray-500">No priorities were set for today.</p>
+          )}
 
-            <div>
-              <h3 className="text-lg font-medium mb-2">Reflection on Priorities</h3>
-              <p className="text-gray-600 text-sm mb-2">
-                What helped or hindered achieving today's priorities?
-              </p>
-              <EditorContent editor={priorityReflectionEditor} />
-            </div>
+          <div>
+            <h3 className="text-lg font-medium mb-2">Reflection on Priorities</h3>
+            <p className="text-gray-600 text-sm mb-2">
+              What helped or hindered achieving today's priorities?
+            </p>
+            <EditorContent editor={priorityReflectionEditor} />
           </div>
-        ) : (
-          <p className="text-gray-500">No priorities were set for today.</p>
-        )}
+        </div>
       </section>
 
       {/* Rest of the sections remain unchanged */}
@@ -381,34 +348,7 @@ function EveningReview({ onContentChange, initialContent, onOpenPromptLibrary, o
         </div>
       </section>
 
-      {/* Goals Review Section */}
-            <section>
-              <h2 className="text-xl font-semibold mb-4">🎯 Review Your Goals</h2>
-              <div className="space-y-6">
-                {bigGoals.map((goal) => (
-                  <div key={goal.id} className="border rounded-lg p-4">
-                    <h3 className="text-lg font-medium mb-2">{goal.title}</h3>
-                    {goal.description && (
-                      <p className="text-gray-600 mb-4">{goal.description}</p>
-                    )}
-                    
-                    {/* Checkpoint Goals */}
-                    <div className="ml-4 space-y-3">
-                      {checkpointGoals[goal.id]?.map((checkpoint) => (
-                        <div key={checkpoint.id} className="flex items-center gap-2">
-                          <div className={`w-2 h-2 rounded-full ${
-                            checkpoint.status === 'completed' ? 'bg-green-500' :
-                            checkpoint.status === 'in_progress' ? 'bg-yellow-500' :
-                            'bg-gray-300'
-                          }`} />
-                          <span className="text-sm">{checkpoint.title}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </section>
+      {/* Remove entire Goals Review Section */}
 
       {/* Learning & Growth */}
       <section>

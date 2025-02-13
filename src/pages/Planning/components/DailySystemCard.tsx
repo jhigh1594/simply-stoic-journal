@@ -1,5 +1,5 @@
 import React from 'react';
-import { ChevronDown, ChevronUp, Clock, Calendar, BarChart2 } from 'lucide-react';
+import { ChevronDown, ChevronUp, Clock, Calendar } from 'lucide-react';
 import type { DailySystem } from '../../../types/planning';
 import { planningService } from '../../../services/planning';
 import LoadingSpinner from '../../../components/LoadingSpinner';
@@ -12,29 +12,36 @@ interface DailySystemCardProps {
   onUpdate: () => void;
 }
 
-function DailySystemCard({ system, onUpdate }: DailySystemCardProps) {
-  const [isExpanded, setIsExpanded] = React.useState(false);
-  const [isUpdating, setIsUpdating] = React.useState(false);
-  const { checkpointGoals, abcTracking, loadCheckpointGoals, loadABCTracking } = usePlanning();
-  const { userId } = useAuth();
+  function DailySystemCard({ system, onUpdate }: DailySystemCardProps) {
+    const [isExpanded, setIsExpanded] = React.useState(false);
+    const [isUpdating, setIsUpdating] = React.useState(false);
+    const { checkpointGoals, abcTracking = [], loadCheckpointGoals, loadABCTracking } = usePlanning();
+    const { userId } = useAuth();
 
-  React.useEffect(() => {
-    if (!userId) return;
-    loadCheckpointGoals();
-    
-    // Load last week's tracking data
-    const today = new Date();
-    const lastWeek = new Date(today.setDate(today.getDate() - 7));
-    loadABCTracking(lastWeek.toISOString().split('T')[0]);
-  }, [loadCheckpointGoals, loadABCTracking, userId]);
+    React.useEffect(() => {
+      if (!userId || !system.checkpoint_goal_id) return;
+      loadCheckpointGoals(system.checkpoint_goal_id);
+      
+      // Load last week's tracking data
+      const today = new Date();
+      const lastWeek = new Date(today.setDate(today.getDate() - 7));
+      loadABCTracking(lastWeek.toISOString().split('T')[0]);
+    }, [loadCheckpointGoals, loadABCTracking, userId, system.checkpoint_goal_id]);
 
-  const checkpoint = checkpointGoals.find(cp => cp.id === system.checkpoint_goal_id);
-  const systemTracking = abcTracking.filter(t => t.system_id === system.id);
+    const checkpoint = system.checkpoint_goal_id ? 
+      Object.values(checkpointGoals)
+        .flat()
+        .find(cp => cp.id === system.checkpoint_goal_id) 
+      : null;
+    const systemTracking = abcTracking?.filter(t => t.system_id === system.id) || [];
 
   const handleActiveChange = async (active: boolean) => {
     try {
       setIsUpdating(true);
-      await planningService.updateDailySystem(system.id, { active });
+      await planningService.createDailySystem({
+        ...system,
+        active
+      });
       onUpdate();
     } catch (error) {
       console.error('Failed to update system status:', error);

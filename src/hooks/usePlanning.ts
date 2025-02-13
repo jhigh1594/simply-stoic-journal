@@ -32,7 +32,7 @@ export function usePlanning() {
     if (data) {
       setCheckpointGoals(prev => ({
         ...prev,
-        [big_goal_id]: data as CheckpointGoal[]
+        [big_goal_id]: data as CheckpointGoal[]  // Simply replace the array instead of spreading
       }));
     }
   }, [execute]);

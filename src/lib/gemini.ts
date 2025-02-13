@@ -142,6 +142,33 @@ export async function generateDecisionAnalysis(content: string): Promise<Decisio
   }
 }
 
+export async function enhanceGoalDescription(description: string): Promise<string> {
+  const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+
+  const prompt = `
+    Enhance this goal description using best practices for effective goal definition. 
+    Focus on making it:
+    1. Specific and measurable
+    2. Action-oriented
+    3. Realistic yet challenging
+    4. Time-bound where appropriate
+    5. Aligned with Stoic principles
+
+    Original description:
+    ${description}
+
+    Provide only the enhanced description without any additional commentary.
+  `;
+
+  try {
+    const result = await model.generateContent(prompt);
+    return result.response.text();
+  } catch (error) {
+    console.error('Failed to enhance goal description:', error);
+    throw error;
+  }
+}
+
 // Retry mechanism for API calls
 export async function withRetry<T>(
   fn: () => Promise<T>,
