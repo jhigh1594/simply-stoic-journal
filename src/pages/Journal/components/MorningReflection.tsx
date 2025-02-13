@@ -5,10 +5,8 @@ import React from 'react';
 import { usePriorities } from '../../../hooks/usePriorities';
 import { debounce } from 'lodash';
 import BigGoalCard from '../../../pages/Planning/components/BigGoalCard';
-import { CheckpointGoalCard } from '../../../pages/Planning/components/CheckpointGoalCard';
 import { usePlanning } from '../../../hooks/usePlanning';
-// Add type imports at the top
-import { BigGoal, CheckpointGoal } from '../../../types/planning';
+import { Bold, Italic, List, Quote } from 'lucide-react';
 
 // Keep only the MorningReflectionProps interface
 interface MorningReflectionProps {
@@ -28,7 +26,7 @@ export const MorningReflection: React.FC<MorningReflectionProps> = ({
   initialGratitudeList = [],
   initialPriorities = []
 }) => {
-  const { bigGoals, checkpointGoals, loadBigGoals, loadCheckpointGoals } = usePlanning();
+  const { bigGoals, loadBigGoals, loadCheckpointGoals } = usePlanning();
   
   // Update useEffects to properly handle goal loading
   React.useEffect(() => {
@@ -36,14 +34,10 @@ export const MorningReflection: React.FC<MorningReflectionProps> = ({
     loadBigGoals();
   }, [loadBigGoals]);
 
-  React.useEffect(() => {
-    if (bigGoals.length > 0) {
-      const activeGoals = bigGoals.filter(goal => goal.status === 'in_progress');
-      Promise.all(activeGoals.map(goal => loadCheckpointGoals(goal.id)));
-    }
-  }, [bigGoals, loadCheckpointGoals]);
-
-  // Update state declarations with proper types
+  // Remove this duplicate destructuring
+  // const { bigGoals, loadBigGoals, loadCheckpointGoals } = usePlanning();
+  
+  // Continue with state declarations
   const [expandedGoals, setExpandedGoals] = React.useState<string[]>([]);
   const [intention, setIntention] = React.useState(initialIntention);
   const [gratitudeList, setGratitudeList] = React.useState<string[]>(initialGratitudeList);
@@ -54,7 +48,9 @@ export const MorningReflection: React.FC<MorningReflectionProps> = ({
   const today = new Date().toISOString().split('T')[0];
 
   // Add editor initialization
-  const editor = useEditor({
+  // Remove MenuBar component and update the editor section
+  // Remove the MenuBar component and its references
+  const mainEditor = useEditor({
     extensions: [StarterKit],
     content: '',
     editorProps: {
@@ -81,10 +77,31 @@ export const MorningReflection: React.FC<MorningReflectionProps> = ({
   ) => {
     if (e.key === 'Enter') {
       e.preventDefault();
-      const refs = type === 'gratitude' ? gratitudeRefs : priorityRefs;
-      const nextInput = refs.current[index + 1];
-      if (nextInput) {
-        nextInput.focus();
+      const list = type === 'gratitude' ? gratitudeList : editPriorities;
+      const setList = type === 'gratitude' ? setGratitudeList : setEditPriorities;
+      const maxItems = 3;
+
+      if (e.shiftKey && list.length < maxItems) {
+        // Add new item and focus it
+        const newList = [...list.slice(0, index + 1), '', ...list.slice(index + 1)];
+        setList(newList);
+        if (type === 'gratitude') {
+          onGratitudeListChange(newList);
+        } else {
+          debouncedPriorityUpdate(newList);
+        }
+        // Use setTimeout to ensure the new input is rendered
+        setTimeout(() => {
+          const refs = type === 'gratitude' ? gratitudeRefs : priorityRefs;
+          refs.current[index + 1]?.focus();
+        }, 0);
+      } else {
+        // Regular Enter - move to next field
+        const refs = type === 'gratitude' ? gratitudeRefs : priorityRefs;
+        const nextInput = refs.current[index + 1];
+        if (nextInput) {
+          nextInput.focus();
+        }
       }
     }
   };
@@ -94,56 +111,8 @@ export const MorningReflection: React.FC<MorningReflectionProps> = ({
     await loadCheckpointGoals(goalId);
   };
 
-  // Add MenuBar component
-  // Update MenuBar with better styling
-  const MenuBar = () => (
-    <div className="border-b p-2 flex gap-2 items-center">
-      <button 
-        onClick={() => editor?.chain().focus().toggleBold().run()}
-        className={`p-2 rounded-md hover:bg-gray-100 ${editor?.isActive('bold') ? 'bg-gray-100' : ''}`}
-        title="Bold"
-      >
-        <span className="font-bold text-sm">B</span>
-      </button>
-      <button 
-        onClick={() => editor?.chain().focus().toggleItalic().run()}
-        className={`p-2 rounded-md hover:bg-gray-100 ${editor?.isActive('italic') ? 'bg-gray-100' : ''}`}
-        title="Italic"
-      >
-        <span className="italic text-sm">I</span>
-      </button>
-      <button 
-        onClick={() => editor?.chain().focus().toggleHeading({ level: 2 }).run()}
-        className={`p-2 rounded-md hover:bg-gray-100 ${editor?.isActive('heading', { level: 2 }) ? 'bg-gray-100' : ''}`}
-        title="Heading"
-      >
-        <span className="font-semibold text-sm">H2</span>
-      </button>
-      <div className="w-px h-4 bg-gray-200 mx-1"></div>
-      <button 
-        onClick={() => editor?.chain().focus().toggleBulletList().run()}
-        className={`p-2 rounded-md hover:bg-gray-100 ${editor?.isActive('bulletList') ? 'bg-gray-100' : ''}`}
-        title="Bullet List"
-      >
-        <span className="text-sm">•</span>
-      </button>
-      <button 
-        onClick={() => editor?.chain().focus().toggleOrderedList().run()}
-        className={`p-2 rounded-md hover:bg-gray-100 ${editor?.isActive('orderedList') ? 'bg-gray-100' : ''}`}
-        title="Numbered List"
-      >
-        <span className="text-sm">1.</span>
-      </button>
-      <button 
-        onClick={() => editor?.chain().focus().toggleBlockquote().run()}
-        className={`p-2 rounded-md hover:bg-gray-100 ${editor?.isActive('blockquote') ? 'bg-gray-100' : ''}`}
-        title="Quote"
-      >
-        <span className="text-sm">"</span>
-      </button>
-    </div>
-  );
-
+  // Remove the entire MenuBar component and its definition
+  
   // Add toggle handler
   const toggleGoal = (goalId: string) => {
     setExpandedGoals(prev => 
@@ -196,8 +165,37 @@ export const MorningReflection: React.FC<MorningReflectionProps> = ({
           </div>
         </div>
         <div className="border rounded-lg overflow-hidden">
-          <MenuBar />
-          <EditorContent editor={editor} className="p-4" />
+          <div className="border-b p-2 flex justify-between">
+            <div className="flex gap-2">
+              <button 
+                onClick={() => mainEditor?.chain().focus().toggleBold().run()}
+                className={`p-2 rounded hover:bg-gray-100 ${mainEditor?.isActive('bold') ? 'bg-gray-100' : ''}`}
+              >
+                <Bold className="h-4 w-4" />
+              </button>
+              <button 
+                onClick={() => mainEditor?.chain().focus().toggleItalic().run()}
+                className={`p-2 rounded hover:bg-gray-100 ${mainEditor?.isActive('italic') ? 'bg-gray-100' : ''}`}
+              >
+                <Italic className="h-4 w-4" />
+              </button>
+              <button 
+                onClick={() => mainEditor?.chain().focus().toggleBulletList().run()}
+                className={`p-2 rounded hover:bg-gray-100 ${mainEditor?.isActive('bulletList') ? 'bg-gray-100' : ''}`}
+              >
+                <List className="h-4 w-4" />
+              </button>
+              <button 
+                onClick={() => mainEditor?.chain().focus().toggleBlockquote().run()}
+                className={`p-2 rounded hover:bg-gray-100 ${mainEditor?.isActive('blockquote') ? 'bg-gray-100' : ''}`}
+              >
+                <Quote className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+          <div className="p-4">
+            <EditorContent editor={mainEditor} />
+          </div>
         </div>
       </section>
 
