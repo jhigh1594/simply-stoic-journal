@@ -1,6 +1,6 @@
 import React from 'react';
 import { ChevronDown, ChevronUp, Scale, Target, Calendar } from 'lucide-react';
-import type { BigGoal, CheckpointGoal } from '../../../types/planning';
+import { BigGoal, CheckpointGoal } from '../../../types/planning';
 import { planningService } from '../../../services/planning';
 import { CheckpointGoalCard } from './CheckpointGoalCard';  // Change to named import
 import LoadingSpinner from '../../../components/LoadingSpinner';
@@ -11,9 +11,18 @@ interface BigGoalCardProps {
   onUpdate: () => void;
   isExpanded?: boolean;
   onToggle?: () => void;
+  checkpoints?: CheckpointGoal[];
+  onCheckpointUpdate?: () => Promise<void>;
 }
 
-function BigGoalCard({ goal, onUpdate, isExpanded: controlledExpanded, onToggle }: BigGoalCardProps) {
+const BigGoalCard: React.FC<BigGoalCardProps> = ({
+  goal,
+  onUpdate,
+  isExpanded: controlledExpanded,
+  onToggle,
+  checkpoints = [],
+  onCheckpointUpdate,
+}) => {
   const [internalExpanded, setInternalExpanded] = React.useState(false);
   const [isUpdating, setIsUpdating] = React.useState(false);
   const [isLoadingCheckpoints, setIsLoadingCheckpoints] = React.useState(false);
@@ -21,7 +30,7 @@ function BigGoalCard({ goal, onUpdate, isExpanded: controlledExpanded, onToggle 
 
   // Use controlled or uncontrolled expanded state
   const isExpanded = controlledExpanded ?? internalExpanded;
-  const setIsExpanded = onToggle ?? setInternalExpanded;
+  const handleToggle = onToggle ?? setInternalExpanded;
 
   React.useEffect(() => {
     const loadGoalCheckpoints = async () => {
@@ -107,7 +116,7 @@ function BigGoalCard({ goal, onUpdate, isExpanded: controlledExpanded, onToggle 
               </select>
             )}
             <button
-              onClick={() => setIsExpanded(!isExpanded)}
+              onClick={() => handleToggle(!isExpanded)}
               className="p-1 hover:bg-gray-100 rounded"
             >
               {isExpanded ? (
@@ -236,12 +245,14 @@ function BigGoalCard({ goal, onUpdate, isExpanded: controlledExpanded, onToggle 
                 <div className="text-center py-4">
                   <LoadingSpinner size="sm" />
                 </div>
-              ) : checkpointGoals[goal.id]?.length > 0 ? (
-                checkpointGoals[goal.id].map((checkpoint: CheckpointGoal) => (
+              ) : checkpoints?.length > 0 ? (
+                checkpoints.map((checkpoint: CheckpointGoal) => (
                   <CheckpointGoalCard 
                     key={checkpoint.id} 
                     goal={checkpoint}
-                    onUpdate={() => loadCheckpointGoals(checkpoint.big_goal_id)}
+                    onUpdate={() => {
+                      onCheckpointUpdate?.();
+                    }}
                   />
                 ))
               ) : (
@@ -253,6 +264,6 @@ function BigGoalCard({ goal, onUpdate, isExpanded: controlledExpanded, onToggle 
       )}
     </div>
   );
-}
+};
 
 export default BigGoalCard;
