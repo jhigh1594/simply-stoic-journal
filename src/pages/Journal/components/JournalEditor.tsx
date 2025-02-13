@@ -137,11 +137,16 @@ function JournalEditor({ content, onContentChange, onContentBlur, type = 'mornin
         <MenuBar editor={editor} />
         <EditorContent editor={editor} />
       </div>
+      // In the PromptsModal component
       <PromptsModal
         isOpen={isPromptsOpen}
         onClose={() => setIsPromptsOpen(false)}
         onSelectPrompt={(prompt) => {
-          editor?.commands.setContent(prompt);
+          editor?.chain()
+            .focus()
+            .createParagraphNear()
+            .insertContent(`\n\n**${prompt}**\n`)  // Add markdown bold syntax
+            .run();
         }}
       />
       <QuotesModal

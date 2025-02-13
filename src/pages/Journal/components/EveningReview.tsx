@@ -4,74 +4,97 @@ import StarterKit from '@tiptap/starter-kit'
 import { motion } from 'framer-motion'
 import { Bold, Italic, List, Quote } from 'lucide-react'
 import type { EveningReviewContent } from '../../../types/journal'
+import { EditorAIPrompt } from '../../../components/EditorAIPrompt';
 import { usePriorities } from '../../../hooks/usePriorities';
 
 interface EveningReviewProps {
   onContentChange?: (content: EveningReviewContent) => void;
   initialContent?: EveningReviewContent;
   onOpenPromptLibrary?: () => void;
+  onPromptSelect?: (prompt: string) => void;  // Add this
 }
 
 // Near the top of the file, after imports
-function EveningReview({ onContentChange, initialContent, onOpenPromptLibrary }: EveningReviewProps) {
-  // Update priorities hook usage to match DailyPriorities
+function EveningReview({ onContentChange, initialContent, onOpenPromptLibrary, onPromptSelect }: EveningReviewProps) {
   const today = new Date().toISOString().split('T')[0];
   const { priorities, isLoading, loadPriorities, togglePriority } = usePriorities();
-  
-  // Remove goals-related state and effects
-  
-  // Load priorities when component mounts
-  React.useEffect(() => {
-    loadPriorities(today);
-  }, [loadPriorities, today]);
-
-  // Remove debug effect
   
   const [completedPriorities, setCompletedPriorities] = React.useState<string[]>(
     initialContent?.priorityReview?.completedPriorities || []
   );
 
-  // Define updateContent function before using it
-  const updateContent = () => {
+  // Define updateContent before editors
+  const updateContent = React.useCallback(() => {
     if (!onContentChange) return;
     
     onContentChange({
-      mainContent: mainEditor?.getText() || '',
+      mainContent: mainEditor?.getHTML() || '',
       virtues: {
-        wisdom: wisdomEditor?.getText() || '',
-        courage: courageEditor?.getText() || '',
-        justice: justiceEditor?.getText() || '',
-        temperance: temperanceEditor?.getText() || ''
+        wisdom: wisdomEditor?.getHTML() || '',
+        courage: courageEditor?.getHTML() || '',
+        justice: justiceEditor?.getHTML() || '',
+        temperance: temperanceEditor?.getHTML() || ''
       },
-      shortcomings: shortcomingsEditor?.getText() || '',
+      shortcomings: shortcomingsEditor?.getHTML() || '',
       learning: {
-        challenge: learningChallengeEditor?.getText() || '',
-        lesson: learningLessonEditor?.getText() || ''
+        challenge: learningChallengeEditor?.getHTML() || '',
+        lesson: learningLessonEditor?.getHTML() || ''
       },
       preparation: {
-        challenges: preparationChallengesEditor?.getText() || '',
-        approach: preparationApproachEditor?.getText() || ''
+        challenges: preparationChallengesEditor?.getHTML() || '',
+        approach: preparationApproachEditor?.getHTML() || ''
       },
       priorityReview: {
         completedPriorities,
-        reflection: priorityReflectionEditor?.getText() || ''
+        reflection: priorityReflectionEditor?.getHTML() || ''
       }
     });
-  };
+  }, []);
 
-  // Add priority reflection editor after updateContent is defined
+  // First, declare all editors
+  const mainEditor = useEditor({
+    extensions: [StarterKit],
+    content: initialContent?.mainContent || '',
+    editorProps: {
+      attributes: {
+        class: 'prose max-w-none focus:outline-none min-h-[200px]'
+      },
+      handleDrop: (view, event, slice, moved) => {
+        if (moved) return false;
+        return true;
+      },
+      handlePaste: (view, event) => {
+        // Strip formatting on paste
+        const text = event.clipboardData?.getData('text/plain');
+        if (text) {
+          view.dispatch(view.state.tr.insertText(text));
+          return true;
+        }
+        return false;
+      }
+    },
+    onUpdate: updateContent,
+    autofocus: 'end'
+  });
+
   const priorityReflectionEditor = useEditor({
     extensions: [StarterKit],
     content: initialContent?.priorityReview?.reflection || '',
     editorProps: {
       attributes: {
         class: 'prose prose-slate max-w-none min-h-[100px] focus:outline-none p-4 border rounded-lg'
+      },
+      handlePaste: (view, event) => {
+        const text = event.clipboardData?.getData('text/plain');
+        if (text) {
+          view.dispatch(view.state.tr.insertText(text));
+          return true;
+        }
+        return false;
       }
-    },
-    onUpdate: updateContent
+    }
   });
 
-  // Editor declarations
   const wisdomEditor = useEditor({
     extensions: [StarterKit],
     content: initialContent?.virtues.wisdom || '',
@@ -79,9 +102,8 @@ function EveningReview({ onContentChange, initialContent, onOpenPromptLibrary }:
       attributes: {
         class: 'prose prose-slate max-w-none min-h-[100px] focus:outline-none p-4 border rounded-lg'
       }
-    },
-    onUpdate: updateContent
-  })
+    }
+  });
 
   const courageEditor = useEditor({
     extensions: [StarterKit],
@@ -90,9 +112,8 @@ function EveningReview({ onContentChange, initialContent, onOpenPromptLibrary }:
       attributes: {
         class: 'prose prose-slate max-w-none min-h-[100px] focus:outline-none p-4 border rounded-lg'
       }
-    },
-    onUpdate: updateContent
-  })
+    }
+  });
 
   const justiceEditor = useEditor({
     extensions: [StarterKit],
@@ -101,9 +122,8 @@ function EveningReview({ onContentChange, initialContent, onOpenPromptLibrary }:
       attributes: {
         class: 'prose prose-slate max-w-none min-h-[100px] focus:outline-none p-4 border rounded-lg'
       }
-    },
-    onUpdate: updateContent
-  })
+    }
+  });
 
   const temperanceEditor = useEditor({
     extensions: [StarterKit],
@@ -112,9 +132,8 @@ function EveningReview({ onContentChange, initialContent, onOpenPromptLibrary }:
       attributes: {
         class: 'prose prose-slate max-w-none min-h-[100px] focus:outline-none p-4 border rounded-lg'
       }
-    },
-    onUpdate: updateContent
-  })
+    }
+  });
 
   const shortcomingsEditor = useEditor({
     extensions: [StarterKit],
@@ -123,9 +142,8 @@ function EveningReview({ onContentChange, initialContent, onOpenPromptLibrary }:
       attributes: {
         class: 'prose prose-slate max-w-none min-h-[100px] focus:outline-none p-4 border rounded-lg'
       }
-    },
-    onUpdate: updateContent
-  })
+    }
+  });
 
   const learningChallengeEditor = useEditor({
     extensions: [StarterKit],
@@ -134,9 +152,8 @@ function EveningReview({ onContentChange, initialContent, onOpenPromptLibrary }:
       attributes: {
         class: 'prose prose-slate max-w-none min-h-[100px] focus:outline-none p-4 border rounded-lg'
       }
-    },
-    onUpdate: updateContent
-  })
+    }
+  });
 
   const learningLessonEditor = useEditor({
     extensions: [StarterKit],
@@ -145,9 +162,8 @@ function EveningReview({ onContentChange, initialContent, onOpenPromptLibrary }:
       attributes: {
         class: 'prose prose-slate max-w-none min-h-[100px] focus:outline-none p-4 border rounded-lg'
       }
-    },
-    onUpdate: updateContent
-  })
+    }
+  });
 
   const preparationChallengesEditor = useEditor({
     extensions: [StarterKit],
@@ -156,9 +172,8 @@ function EveningReview({ onContentChange, initialContent, onOpenPromptLibrary }:
       attributes: {
         class: 'prose prose-slate max-w-none min-h-[100px] focus:outline-none p-4 border rounded-lg'
       }
-    },
-    onUpdate: updateContent
-  })
+    }
+  });
 
   const preparationApproachEditor = useEditor({
     extensions: [StarterKit],
@@ -167,55 +182,16 @@ function EveningReview({ onContentChange, initialContent, onOpenPromptLibrary }:
       attributes: {
         class: 'prose prose-slate max-w-none min-h-[100px] focus:outline-none p-4 border rounded-lg'
       }
-    },
-    onUpdate: updateContent
-  })
-
-  // Add a new editor for the main content
-  // Update the mainEditor configuration
-  // Update the mainEditor configuration to use onPromptSelect
-  const mainEditor = useEditor({
-    extensions: [StarterKit],
-    content: initialContent?.mainContent || '',
-    editorProps: {
-      attributes: {
-        class: 'prose max-w-none focus:outline-none min-h-[200px]'
-      }
-    },
-    onUpdate: () => {
-      if (onContentChange) {
-        onContentChange({
-          mainContent: mainEditor?.getText() || '',
-          virtues: {
-            wisdom: wisdomEditor?.getText() || '',
-            courage: courageEditor?.getText() || '',
-            justice: justiceEditor?.getText() || '',
-            temperance: temperanceEditor?.getText() || ''
-          },
-          shortcomings: shortcomingsEditor?.getText() || '',
-          learning: {
-            challenge: learningChallengeEditor?.getText() || '',
-            lesson: learningLessonEditor?.getText() || ''
-          },
-          preparation: {
-            challenges: preparationChallengesEditor?.getText() || '',
-            approach: preparationApproachEditor?.getText() || ''
-          },
-          priorityReview: {
-            completedPriorities,
-            reflection: priorityReflectionEditor?.getText() || ''
-          }
-        });
-      }
     }
   });
 
-  // Add effect to handle prompt updates
+  // Remove duplicate mainEditor declaration and keep only the effect
   React.useEffect(() => {
     if (mainEditor && initialContent?.mainContent) {
       mainEditor.commands.setContent(initialContent.mainContent);
     }
   }, [mainEditor, initialContent?.mainContent]);
+
   return (
     <motion.div className="space-y-8">
       {/* Main editor section remains the same */}
@@ -255,8 +231,30 @@ function EveningReview({ onContentChange, initialContent, onOpenPromptLibrary }:
               Browse Prompts
             </button>
           </div>
-          <div className="p-4">
+          <div className="p-4 relative">
             <EditorContent editor={mainEditor} />
+            <EditorAIPrompt 
+              editor={mainEditor}
+              onPromptGenerated={(prompt) => {
+                mainEditor?.chain()
+                  .focus()
+                  .createParagraphNear()
+                  .insertContent({
+                    type: 'paragraph',
+                    content: [{
+                      type: 'text',
+                      marks: [{ type: 'bold' }],
+                      text: prompt
+                    }]
+                  })
+                  .insertContent({
+                    type: 'paragraph',
+                    content: [{ type: 'text', text: '' }]
+                  })
+                  .run();
+              }}
+              key="mainEditorPrompt"
+            />
           </div>
         </div>
       </section>

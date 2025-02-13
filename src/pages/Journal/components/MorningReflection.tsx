@@ -2,160 +2,103 @@
 import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import React from 'react';
-import { usePriorities } from '../../../hooks/usePriorities';
-import { debounce } from 'lodash';
-import BigGoalCard from '../../../pages/Planning/components/BigGoalCard';
-import { usePlanning } from '../../../hooks/usePlanning';
+import { EditorAIPrompt } from '../../../components/EditorAIPrompt';
 import { Bold, Italic, List, Quote } from 'lucide-react';
 
-// Keep only the MorningReflectionProps interface
 interface MorningReflectionProps {
+  content: string;
+  onContentChange: (content: string) => void;
+  onContentBlur: () => void;
   onOpenPromptLibrary?: () => void;
+  onPromptSelect?: (prompt: string) => void;  // Add this prop
+  intention: string;
   onIntentionChange: (intention: string) => void;
+  gratitudeList: string[];
   onGratitudeListChange: (list: string[]) => void;
-  initialIntention?: string;
-  initialGratitudeList?: string[];
-  initialPriorities?: string[];
+  priorities: string[];
+  onPrioritiesChange: (priorities: string[]) => void;
 }
 
 export const MorningReflection: React.FC<MorningReflectionProps> = ({
+  content,
+  onContentChange,
+  onContentBlur,
   onOpenPromptLibrary,
+  onPromptSelect,  // Add this prop
+  intention,
   onIntentionChange,
+  gratitudeList,
   onGratitudeListChange,
-  initialIntention = '',
-  initialGratitudeList = [],
-  initialPriorities = []
+  priorities,
+  onPrioritiesChange,
 }) => {
-  const { bigGoals, loadBigGoals, loadCheckpointGoals } = usePlanning();
-  
-  // Update useEffects to properly handle goal loading
-  React.useEffect(() => {
-    console.log('Loading goals...');
-    loadBigGoals();
-  }, [loadBigGoals]);
-
-  // Remove this duplicate destructuring
-  // const { bigGoals, loadBigGoals, loadCheckpointGoals } = usePlanning();
-  
-  // Continue with state declarations
-  const [expandedGoals, setExpandedGoals] = React.useState<string[]>([]);
-  const [intention, setIntention] = React.useState(initialIntention);
-  const [gratitudeList, setGratitudeList] = React.useState<string[]>(initialGratitudeList);
-  const [editPriorities, setEditPriorities] = React.useState<string[]>(initialPriorities);
-  const gratitudeRefs = React.useRef<(HTMLInputElement | null)[]>([]);
-  const priorityRefs = React.useRef<(HTMLInputElement | null)[]>([]);
-  const { setPriorityList } = usePriorities();
-  const today = new Date().toISOString().split('T')[0];
-
-  // Add editor initialization
-  // Remove MenuBar component and update the editor section
-  // Remove the MenuBar component and its references
   const mainEditor = useEditor({
     extensions: [StarterKit],
-    content: '',
+    content: content,
+    onUpdate: ({ editor }) => {
+      onContentChange(editor.getHTML());
+    },
     editorProps: {
       attributes: {
         class: 'prose max-w-none focus:outline-none min-h-[200px]'
+      },
+      handleDrop: (view, event, slice, moved) => {
+        if (moved) return false;
+        return true;
+      },
+      handlePaste: (view, event) => {
+        const text = event.clipboardData?.getData('text/plain');
+        if (text) {
+          view.dispatch(view.state.tr.insertText(text));
+          return true;
+        }
+        return false;
       }
-    }
+    },
+    autofocus: 'end'
   });
 
-  // Add debouncedPriorityUpdate after state declarations
-  const debouncedPriorityUpdate = React.useMemo(
-    () => debounce((priorities: string[]) => {
-      const filteredPriorities = priorities.filter(p => p.trim() !== '');
-      setPriorityList(filteredPriorities, today);
-    }, 500),
-    [setPriorityList, today]
-  );
-
-  // Add handleKeyDown function
-  const handleKeyDown = (
-    e: React.KeyboardEvent<HTMLInputElement>,
-    type: 'gratitude' | 'priority',
-    index: number
-  ) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      const list = type === 'gratitude' ? gratitudeList : editPriorities;
-      const setList = type === 'gratitude' ? setGratitudeList : setEditPriorities;
-      const maxItems = 3;
-
-      if (e.shiftKey && list.length < maxItems) {
-        // Add new item and focus it
-        const newList = [...list.slice(0, index + 1), '', ...list.slice(index + 1)];
-        setList(newList);
-        if (type === 'gratitude') {
-          onGratitudeListChange(newList);
-        } else {
-          debouncedPriorityUpdate(newList);
-        }
-        // Use setTimeout to ensure the new input is rendered
-        setTimeout(() => {
-          const refs = type === 'gratitude' ? gratitudeRefs : priorityRefs;
-          refs.current[index + 1]?.focus();
-        }, 0);
-      } else {
-        // Regular Enter - move to next field
-        const refs = type === 'gratitude' ? gratitudeRefs : priorityRefs;
-        const nextInput = refs.current[index + 1];
-        if (nextInput) {
-          nextInput.focus();
-        }
-      }
+  // Add effect to handle content updates
+  React.useEffect(() => {
+    if (mainEditor && content) {
+      mainEditor.commands.setContent(content);
     }
-  };
+  }, [mainEditor, content]);
 
-  // Add handleCheckpointUpdate function
-  const handleCheckpointUpdate = async (goalId: string) => {
-    await loadCheckpointGoals(goalId);
-  };
+  // Add handler for prompt selection
+  // Update the handlePromptSelect function
+  const handlePromptSelect = React.useCallback((prompt: string) => {
+    mainEditor?.chain()
+      .focus()
+      .createParagraphNear()
+      .insertContent({
+        type: 'paragraph',
+        content: [{
+          type: 'text',
+          marks: [{ type: 'bold' }],
+          text: prompt
+        }]
+      })
+      .insertContent({
+        type: 'paragraph',
+        content: [{ type: 'text', text: '' }]
+      })
+      .run();
+  }, [mainEditor]);
 
-  // Remove the entire MenuBar component and its definition
-  
-  // Add toggle handler
-  const toggleGoal = (goalId: string) => {
-    setExpandedGoals(prev => 
-      prev.includes(goalId) 
-        ? prev.filter(id => id !== goalId)
-        : [...prev, goalId]
-    );
-  };
-  
+  // Update how we use the EditorAIPrompt component
+  <EditorAIPrompt 
+    editor={mainEditor}
+    onPromptGenerated={handlePromptSelect}
+    key="mainEditorPrompt" // Add a key to ensure single instance
+  />
   return (
     <div className="space-y-8">
-      <section>
-        <h2 className="text-xl font-semibold mb-4">🎯 Review Your Goals</h2>
-        <div className="space-y-4">
-          {bigGoals.filter(goal => goal.status === 'in_progress').map((goal) => (
-            <BigGoalCard 
-              key={goal.id} 
-              goal={goal} 
-              onUpdate={loadBigGoals}
-              isExpanded={expandedGoals.includes(goal.id)}
-              onToggle={() => toggleGoal(goal.id)}
-            />
-          ))}
-          
-          {bigGoals.filter(goal => goal.status === 'in_progress').length === 0 && (
-            <div className="text-center py-6 bg-gray-50 rounded-lg border border-dashed">
-              <p className="text-gray-500">No active goals found.</p>
-              <button className="mt-2 text-sm text-blue-600 hover:text-blue-700">
-                Set Your First Goal
-              </button>
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* Existing Today's Priorities section */}
+      {/* Main Editor Section */}
       <section>
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-semibold">Morning Reflection</h2>
           <div className="flex gap-2">
-            <button className="px-4 py-2 text-sm bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
-              Saved Quotes
-            </button>
             <button 
               onClick={onOpenPromptLibrary}
               className="px-4 py-2 text-sm bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
@@ -193,140 +136,138 @@ export const MorningReflection: React.FC<MorningReflectionProps> = ({
               </button>
             </div>
           </div>
-          <div className="p-4">
+          <div className="p-4 relative">
             <EditorContent editor={mainEditor} />
+            <EditorAIPrompt 
+              editor={mainEditor}
+              onPromptGenerated={handlePromptSelect}
+            />
           </div>
         </div>
       </section>
 
+      {/* Intention Section */}
       <section>
-        <h2 className="text-xl font-semibold mb-4">Today's Intention</h2>
-        <input
-          type="text"
-          value={intention}
-          onChange={(e) => onIntentionChange(e.target.value)}
-          placeholder="What is your intention for today?"
-          className="w-full p-2 border rounded" // Updated padding to match gratitude inputs
-        />
-      </section>
-
-      <section>
-        <h2 className="text-xl font-semibold mb-4">Gratitude</h2>
+        <h2 className="text-xl font-semibold mb-4">🎯 Today's Intention</h2>
+        <blockquote className="border-l-4 border-gray-200 pl-4 italic text-gray-600 mb-6">
+          "First say to yourself what you would be; then do what you have to do." - Epictetus
+        </blockquote>
         <div className="space-y-4">
-          {gratitudeList.length === 0 ? (
+          <div>
+            <label htmlFor="intention" className="block text-sm font-medium text-gray-700 mb-1">
+              What is your intention for today?
+            </label>
             <input
               type="text"
-              placeholder="I am grateful for..."
-              className="w-full p-2 border rounded"
-              onFocus={() => {
-                setGratitudeList(['']);
-                onGratitudeListChange(['']);
-              }}
-              onChange={(e) => {
-                setGratitudeList([e.target.value]);
-                onGratitudeListChange([e.target.value]);
-              }}
+              id="intention"
+              value={intention}
+              onChange={(e) => onIntentionChange(e.target.value)}
+              className="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="I intend to..."
             />
-          ) : (
-            <>
-              {gratitudeList.map((item, index) => (
-                <div key={index} className="flex gap-2">
-                  <input
-                    ref={el => gratitudeRefs.current[index] = el}
-                    type="text"
-                    value={item}
-                    onChange={(e) => {
-                      const newList = [...gratitudeList];
-                      newList[index] = e.target.value;
-                      setGratitudeList(newList);
-                      onGratitudeListChange(newList);
-                    }}
-                    onKeyDown={(e) => handleKeyDown(e, 'gratitude', index)}
-                    placeholder="I am grateful for..."
-                    className="flex-1 p-2 border rounded"
-                  />
-                  <button
-                    onClick={() => {
-                      const newList = gratitudeList.filter((_, i) => i !== index);
-                      setGratitudeList(newList);
-                      onGratitudeListChange(newList);
-                    }}
-                    className="flex-shrink-0 text-red-500 hover:text-red-700"
-                  >
-                    Remove
-                  </button>
-                </div>
-              ))}
-              {gratitudeList.length < 3 && (
-                <button
-                  onClick={() => {
-                    const newList = [...gratitudeList, ''];
-                    setGratitudeList(newList);
-                    onGratitudeListChange(newList);
-                  }}
-                  className="text-blue-500 hover:text-blue-700"
-                >
-                  Add Gratitude Item
-                </button>
-              )}
-            </>
+          </div>
+        </div>
+      </section>
+
+      {/* Review Your Goals Section */}
+      <section>
+        <h2 className="text-xl font-semibold mb-4">🎯 Review Your Goals</h2>
+        <blockquote className="border-l-4 border-gray-200 pl-4 italic text-gray-600 mb-6">
+          "The soul becomes dyed with the color of its thoughts." - Marcus Aurelius
+        </blockquote>
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              What are your current goals? Are your actions aligned with them?
+            </label>
+            <div className="p-4 bg-gray-50 rounded-lg">
+              <p className="text-gray-600">
+                Take a moment to reflect on your goals and ensure today's actions will move you closer to them.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Gratitude Section */}
+      <section>
+        <h2 className="text-xl font-semibold mb-4">🙏 Gratitude</h2>
+        <blockquote className="border-l-4 border-gray-200 pl-4 italic text-gray-600 mb-6">
+          "Do not indulge in dreams of having what you have not, but reckon up the chief of the blessings you do possess, and then thankfully remember how you would crave for them if they were not yours." - Marcus Aurelius
+        </blockquote>
+        <div className="space-y-4">
+          {gratitudeList.map((item, index) => (
+            <div key={index} className="flex gap-2">
+              <input
+                type="text"
+                value={item}
+                onChange={(e) => {
+                  const newList = [...gratitudeList];
+                  newList[index] = e.target.value;
+                  onGratitudeListChange(newList);
+                }}
+                className="flex-1 p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="I am grateful for..."
+              />
+              <button
+                onClick={() => {
+                  const newList = gratitudeList.filter((_, i) => i !== index);
+                  onGratitudeListChange(newList);
+                }}
+                className="p-2 text-red-500 hover:bg-red-50 rounded-lg"
+              >
+                ×
+              </button>
+            </div>
+          ))}
+          {gratitudeList.length < 3 && (
+            <button
+              onClick={() => onGratitudeListChange([...gratitudeList, ''])}
+              className="w-full p-2 border border-dashed rounded-lg text-gray-500 hover:bg-gray-50"
+            >
+              + Add gratitude
+            </button>
           )}
         </div>
       </section>
 
+      {/* Priorities Section */}
       <section>
-        <h2 className="text-xl font-semibold mb-4">Today's Priorities</h2>
+        <h2 className="text-xl font-semibold mb-4">📋 Today's Priorities</h2>
+        <blockquote className="border-l-4 border-gray-200 pl-4 italic text-gray-600 mb-6">
+          "If a man knows not to which port he sails, no wind is favorable." - Seneca
+        </blockquote>
         <div className="space-y-4">
-          {editPriorities.length > 0 ? (
-            editPriorities.map((priority: string, index: number) => (
-              <div key={index} className="flex gap-2">
-                <input
-                  ref={el => priorityRefs.current[index] = el}
-                  type="text"
-                  value={priority}
-                  onChange={(e) => {
-                    const newPriorities = [...editPriorities];
-                    newPriorities[index] = e.target.value;
-                    setEditPriorities(newPriorities);
-                    debouncedPriorityUpdate(newPriorities);
-                  }}
-                  onKeyDown={(e) => handleKeyDown(e, 'priority', index)}
-                  placeholder="Enter a priority..."
-                  className="flex-1 p-2 border rounded"
-                />
-                <button
-                  onClick={() => {
-                    const newPriorities = editPriorities.filter((_, i) => i !== index);
-                    setEditPriorities(newPriorities);
-                    debouncedPriorityUpdate(newPriorities);
-                  }}
-                  className="flex-shrink-0 text-red-500 hover:text-red-700"
-                >
-                  Remove
-                </button>
-              </div>
-            ))
-          ) : (
-            <input
-              type="text"
-              placeholder="Enter a priority..."
-              className="w-full p-2 border rounded"
-              onFocus={() => {
-                setEditPriorities(['']);
-                debouncedPriorityUpdate(['']);
-              }}
-            />
-          )}
-          {editPriorities.length > 0 && editPriorities.length < 3 && (
+          {priorities.map((priority, index) => (
+            <div key={index} className="flex gap-2">
+              <input
+                type="text"
+                value={priority}
+                onChange={(e) => {
+                  const newPriorities = [...priorities];
+                  newPriorities[index] = e.target.value;
+                  onPrioritiesChange(newPriorities);
+                }}
+                className="flex-1 p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Priority..."
+              />
+              <button
+                onClick={() => {
+                  const newPriorities = priorities.filter((_, i) => i !== index);
+                  onPrioritiesChange(newPriorities);
+                }}
+                className="p-2 text-red-500 hover:bg-red-50 rounded-lg"
+              >
+                ×
+              </button>
+            </div>
+          ))}
+          {priorities.length < 3 && (
             <button
-              onClick={() => {
-                const newPriorities = [...editPriorities, ''];
-                setEditPriorities(newPriorities);
-                debouncedPriorityUpdate(newPriorities);
-              }}
-              className="text-blue-500 hover:text-blue-700"
+              onClick={() => onPrioritiesChange([...priorities, ''])}
+              className="w-full p-2 border border-dashed rounded-lg text-gray-500 hover:bg-gray-50"
             >
-              Add Priority
+              + Add priority
             </button>
           )}
         </div>
@@ -335,6 +276,4 @@ export const MorningReflection: React.FC<MorningReflectionProps> = ({
   );
 };
 
-
-// Remove local debounce implementation
-export default MorningReflection
+export default MorningReflection;

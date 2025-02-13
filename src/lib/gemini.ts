@@ -1,5 +1,6 @@
 import { genAI } from './gemini-config.ts';  // Add .ts extension
 import type { EveningReviewContent, AIInsights } from '../types/journal';
+import { createJournalPrompt } from './prompts/journalPrompt';
 
 // Helper to ensure consistent prompt structure
 const createStructuredPrompt = (type: 'journal' | 'decision', content: string) => {
@@ -165,6 +166,19 @@ export async function enhanceGoalDescription(description: string): Promise<strin
     return result.response.text();
   } catch (error) {
     console.error('Failed to enhance goal description:', error);
+    throw error;
+  }
+}
+
+export async function generateReflectionPrompt(content: string): Promise<string> {
+  const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+
+  try {
+    const prompt = createJournalPrompt(content);
+    const result = await model.generateContent(prompt);
+    return result.response.text().trim();
+  } catch (error) {
+    console.error('Failed to generate reflection prompt:', error);
     throw error;
   }
 }

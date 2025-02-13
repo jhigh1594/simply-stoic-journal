@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { quotesService } from '../services/quotes';
 import type { Quote } from '../types/library';
 import { useAsyncAction } from './useAsyncAction';
@@ -9,8 +9,13 @@ export function useQuotes() {
 
   const loadQuotes = useCallback(async () => {
     const data = await execute(() => quotesService.getQuotes());
-    if (data) setQuotes(data);
+    if (data && Array.isArray(data)) setQuotes(data);
   }, [execute]);
+
+  // Add useEffect to load quotes on mount
+  useEffect(() => {
+    loadQuotes();
+  }, [loadQuotes]);
 
   const getDailyQuote = useCallback(async () => {
     return await execute(() => quotesService.getDailyQuote());
