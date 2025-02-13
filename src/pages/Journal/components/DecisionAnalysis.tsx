@@ -1,7 +1,10 @@
-import React from 'react';
-import { Target, Brain, Scale, Sparkles, ArrowRight, Plus } from 'lucide-react';
+import React, { useState, useCallback } from 'react';
+import { Target, Brain, Scale, Sparkles, ArrowRight, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import type { JournalEntry } from '../../../types/journal';
+// Remove the local interface and import it from gemini.ts
+import { generateDecisionAnalysis, DecisionAnalysisResult } from '../../../lib/gemini';
+import { createDecisionAnalysisPrompt, createImplementationPlanPrompt } from '../../../lib/prompts/journalPrompt';
 
 interface Factor {
   text: string;
@@ -14,19 +17,49 @@ interface DecisionAnalysisProps {
   onChange: (value: JournalEntry['decision_analysis']) => void;
 }
 
-function DecisionAnalysis({ value, onChange }: DecisionAnalysisProps) {
-  const [step, setStep] = React.useState(1);
-  const [question, setQuestion] = React.useState(value?.question || '');
-  const [factors, setFactors] = React.useState<Factor[]>(value?.factors || []);
-  const [newFactor, setNewFactor] = React.useState('');
-  const [analysis, setAnalysis] = React.useState(value?.analysis || '');
-  const [conclusion, setConclusion] = React.useState(value?.conclusion || '');
+// Remove the local DecisionAnalysisResult interface since it's imported
 
-  const handleAddFactor = (type: Factor['type']) => {
+function DecisionAnalysis({ value, onChange }: DecisionAnalysisProps) {
+  // Add steps definition before state declarations
+  const steps = [
+    {
+      title: 'Define Question',
+      description: 'What decision are you analyzing?',
+      icon: Target
+    },
+    {
+      title: 'Identify Factors',
+      description: 'List controllable and uncontrollable factors',
+      icon: Brain
+    },
+    {
+      title: 'Analyze',
+      description: 'Apply Stoic principles',
+      icon: Scale
+    },
+    {
+      title: 'Conclude',
+      description: 'Make a reasoned decision',
+      icon: Sparkles
+    }
+  ];
+
+  // State declarations
+  const [step, setStep] = useState(1);
+  const [question, setQuestion] = useState(value?.question || '');
+  const [factors, setFactors] = useState<Factor[]>(value?.factors || []);
+  const [analysis, setAnalysis] = useState(value?.analysis || '');
+  const [conclusion, setConclusion] = useState(value?.conclusion || '');
+  const [newFactor, setNewFactor] = useState('');
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [isGeneratingPlan, setIsGeneratingPlan] = useState(false);
+
+  // Handlers
+  const handleAddFactor = useCallback((type: Factor['type']) => {
     if (!newFactor.trim()) return;
     
     const factor: Factor = {
-      text: newFactor.trim(),
+      text: newFactor,
       type,
       impact: 'medium'
     };
@@ -34,62 +67,88 @@ function DecisionAnalysis({ value, onChange }: DecisionAnalysisProps) {
     const updatedFactors = [...factors, factor];
     setFactors(updatedFactors);
     setNewFactor('');
-    
-    onChange({
-      question,
-      factors: updatedFactors,
-      analysis,
-      conclusion
-    });
-  };
+    onChange({ question, factors: updatedFactors, analysis, conclusion });
+  }, [newFactor, factors, question, analysis, conclusion, onChange]);
 
-  const handleUpdateFactor = (index: number, updates: Partial<Factor>) => {
-    const updatedFactors = factors.map((factor, i) =>
+  const handleUpdateFactor = useCallback((index: number, updates: Partial<Factor>) => {
+    const updatedFactors = factors.map((factor, i) => 
       i === index ? { ...factor, ...updates } : factor
     );
     setFactors(updatedFactors);
-    onChange({
-      question,
-      factors: updatedFactors,
-      analysis,
-      conclusion
-    });
-  };
+    onChange({ question, factors: updatedFactors, analysis, conclusion });
+  }, [factors, question, analysis, conclusion, onChange]);
 
-  const handleRemoveFactor = (index: number) => {
+  const handleRemoveFactor = useCallback((index: number) => {
     const updatedFactors = factors.filter((_, i) => i !== index);
     setFactors(updatedFactors);
-    onChange({
-      question,
-      factors: updatedFactors,
-      analysis,
-      conclusion
-    });
+    onChange({ question, factors: updatedFactors, analysis, conclusion });
+  }, [factors, question, analysis, conclusion, onChange]);
+
+  // Update the generateStoicAnalysis function
+  const generateStoicAnalysis = async () => {
+    setIsAnalyzing(true);
+    try {
+      const factorsText = factors.map(f => `\n- ${f.text} (${f.type}, ${f.impact} impact)`).join('');
+      const result = await generateDecisionAnalysis(
+        createDecisionAnalysisPrompt(question, factorsText)
+      );
+      
+      // Only use the direct response sections, not the reflection which might contain duplicates
+      const analysisText = [
+        '## Within Our Control',
+        result.dichotomy_of_control.within_control
+          .filter(item => item.trim())
+          .map(item => `• ${item.replace(/^\*\*.*?\*\*\s*:?\s*/g, '')}`)
+          .join('\n'),
+        '\n## Partially in Our Control',
+        result.dichotomy_of_control.partial_control
+          .filter(item => item.trim())
+          .map(item => `• ${item.replace(/^\*\*.*?\*\*\s*:?\s*/g, '')}`)
+          .join('\n'),
+        '\n## Beyond Our Control',
+        result.dichotomy_of_control.outside_control
+          .filter(item => item.trim())
+          .map(item => `• ${item.replace(/^\*\*.*?\*\*\s*:?\s*/g, '')}`)
+          .join('\n'),
+        '\n## Stoic Approach',
+        result.dichotomy_of_control.reflection
+          .replace(/^\*\*.*?\*\*\s*:?\s*/g, '')
+          .replace(/\*\*/g, '')
+      ].join('\n');
+      
+      setAnalysis(analysisText);
+      onChange({ question, factors, analysis: analysisText, conclusion });
+    } catch (error) {
+      console.error('Failed to generate analysis:', error);
+    } finally {
+      setIsAnalyzing(false);
+    }
   };
 
-  const steps = [
-    {
-      title: 'Define the Decision',
-      description: 'What specific decision are you trying to make?',
-      icon: Target
-    },
-    {
-      title: 'Identify Factors',
-      description: 'List all relevant factors, both within and outside your control',
-      icon: Brain
-    },
-    {
-      title: 'Analyze',
-      description: 'Examine each factor through Stoic principles',
-      icon: Scale
-    },
-    {
-      title: 'Conclude',
-      description: 'Determine your path forward based on virtue and reason',
-      icon: Sparkles
+  const generateImplementationPlan = async () => {
+    setIsGeneratingPlan(true);
+    try {
+      const result = await generateDecisionAnalysis(
+        createImplementationPlanPrompt(question, analysis)
+      );
+      
+      const newConclusion = `## Action Steps\n${result.recommendations.join('\n')}`;
+      setConclusion(newConclusion);
+      onChange({ 
+        question, 
+        factors, 
+        analysis, 
+        conclusion: newConclusion 
+      });
+    } catch (error) {
+      console.error('Failed to generate implementation plan:', error);
+    } finally {
+      setIsGeneratingPlan(false);
     }
-  ];
+  };
 
+  // Rest of your component remains the same...
+  
   return (
     <motion.div 
       initial={{ opacity: 0, y: 20 }}
@@ -156,124 +215,123 @@ function DecisionAnalysis({ value, onChange }: DecisionAnalysisProps) {
 
       {step === 2 && (
         <div>
-          <h2 className="text-lg font-medium mb-4">Identify Relevant Factors</h2>
-          <p className="text-gray-600 mb-4">
-            List all factors that influence this decision. Categorize them as either within your control
-            (controllable) or outside your control (uncontrollable).
-          </p>
-          
-          {/* Add new factor */}
-          <div className="flex gap-2 mb-6">
-            <input
-              type="text"
-              value={newFactor}
-              onChange={(e) => setNewFactor(e.target.value)}
-              placeholder="Add a factor..."
-              className="flex-1 px-4 py-2 border rounded-lg focus:outline-none focus:border-black"
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault();
-                  handleAddFactor('controllable');
-                }
-              }}
-            />
-            <button
-              onClick={() => handleAddFactor('controllable')}
-              className="px-4 py-2 bg-green-50 text-green-700 rounded-lg hover:bg-green-100"
-            >
-              Controllable
-            </button>
-            <button
-              onClick={() => handleAddFactor('uncontrollable')}
-              className="px-4 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100"
-            >
-              Uncontrollable
-            </button>
-          </div>
-
-          {/* Factors list */}
-          <div className="space-y-4 mb-6">
-            {factors.map((factor, index) => (
-              <div
-                key={index}
-                className={`p-4 rounded-lg ${
-                  factor.type === 'controllable'
-                    ? 'bg-green-50 border-green-100'
-                    : 'bg-blue-50 border-blue-100'
-                } border`}
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-lg font-medium">Factors</h2>
+            </div>
+            
+            {/* Add new factor */}
+            <div className="flex gap-2 mb-6">
+              <input
+                type="text"
+                value={newFactor}
+                onChange={(e) => setNewFactor(e.target.value)}
+                placeholder="Add a factor..."
+                className="flex-1 px-4 py-2 border rounded-lg focus:outline-none focus:border-black"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleAddFactor('controllable');
+                  }
+                }}
+              />
+              <button
+                onClick={() => handleAddFactor('controllable')}
+                className="px-4 py-2 bg-green-50 text-green-700 rounded-lg hover:bg-green-100"
               >
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1">
-                    <div className="font-medium mb-2">{factor.text}</div>
-                    <div className="flex items-center gap-4">
-                      <select
-                        value={factor.type}
-                        onChange={(e) => handleUpdateFactor(index, {
-                          type: e.target.value as Factor['type']
-                        })}
-                        className="text-sm px-2 py-1 rounded border bg-white"
-                      >
-                        <option value="controllable">Controllable</option>
-                        <option value="uncontrollable">Uncontrollable</option>
-                      </select>
-                      <select
-                        value={factor.impact}
-                        onChange={(e) => handleUpdateFactor(index, {
-                          impact: e.target.value as Factor['impact']
-                        })}
-                        className="text-sm px-2 py-1 rounded border bg-white"
-                      >
-                        <option value="high">High Impact</option>
-                        <option value="medium">Medium Impact</option>
-                        <option value="low">Low Impact</option>
-                      </select>
-                    </div>
-                  </div>
+                Controllable
+              </button>
+              <button
+                onClick={() => handleAddFactor('uncontrollable')}
+                className="px-4 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100"
+              >
+                Uncontrollable
+              </button>
+            </div>
+            
+            {/* Factors list */}
+            <div className="space-y-4 mb-6">
+              {factors.map((factor, index) => (
+                <div key={index} className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={factor.text}
+                    onChange={(e) => handleUpdateFactor(index, { text: e.target.value })}
+                    className="flex-1 px-4 py-2 border rounded-lg focus:outline-none focus:border-black"
+                  />
+                  <select
+                    value={factor.type}
+                    onChange={(e) => handleUpdateFactor(index, { type: e.target.value as Factor['type'] })}
+                    className="px-4 py-2 border rounded-lg focus:outline-none focus:border-black"
+                  >
+                    <option value="controllable">Controllable</option>
+                    <option value="uncontrollable">Uncontrollable</option>
+                  </select>
+                  <select
+                    value={factor.impact}
+                    onChange={(e) => handleUpdateFactor(index, { impact: e.target.value as Factor['impact'] })}
+                    className="px-4 py-2 border rounded-lg focus:outline-none focus:border-black"
+                  >
+                    <option value="high">High Impact</option>
+                    <option value="medium">Medium Impact</option>
+                    <option value="low">Low Impact</option>
+                  </select>
                   <button
                     onClick={() => handleRemoveFactor(index)}
-                    className="text-gray-400 hover:text-gray-600"
+                    className="p-2 text-red-600 hover:text-red-800"
                   >
                     ×
                   </button>
                 </div>
-              </div>
-            ))}
-          </div>
-
-          <div className="flex justify-between">
-            <button
-              onClick={() => setStep(1)}
-              className="px-4 py-2 text-gray-600 hover:text-gray-800"
-            >
-              Back
-            </button>
-            <button
-              onClick={() => setStep(3)}
-              disabled={factors.length === 0}
-              className="flex items-center gap-2 px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 disabled:opacity-50"
-            >
-              Next Step
-              <ArrowRight className="h-4 w-4" />
-            </button>
-          </div>
+              ))}
+            </div>
+            
+            {/* Navigation */}
+            <div className="flex justify-between mt-4">
+              <button
+                onClick={() => setStep(1)}
+                className="px-4 py-2 text-gray-600 hover:text-gray-800"
+              >
+                Back
+              </button>
+              <button
+                onClick={() => setStep(3)}
+                disabled={!factors.length}
+                className="flex items-center gap-2 px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 disabled:opacity-50"
+              >
+                Next Step
+                <ArrowRight className="h-4 w-4" />
+              </button>
+            </div>
         </div>
       )}
 
       {step === 3 && (
         <div>
-          <h2 className="text-lg font-medium mb-4">Stoic Analysis</h2>
-          <p className="text-gray-600 mb-4">
-            Analyze your decision through Stoic principles. Consider virtue, wisdom, justice, and self-control.
-          </p>
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-lg font-medium">Stoic Analysis</h2>
+            <button
+              onClick={generateStoicAnalysis}
+              disabled={isAnalyzing || !factors.length}
+              className="flex items-center gap-2 px-4 py-2 bg-purple-50 text-purple-700 rounded-lg hover:bg-purple-100 disabled:opacity-50"
+            >
+              {isAnalyzing ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Sparkles className="h-4 w-4" />
+              )}
+              Get Stoic Perspective
+            </button>
+          </div>
           <textarea
             value={analysis}
             onChange={(e) => {
               setAnalysis(e.target.value);
               onChange({ question, factors, analysis: e.target.value, conclusion });
             }}
-            placeholder="Write your analysis here..."
+            placeholder="Write your analysis here, or use AI to get a Stoic perspective..."
             className="w-full p-4 border rounded-lg focus:outline-none focus:border-black min-h-[200px] resize-none"
           />
+          {/* Navigation buttons */}
           <div className="flex justify-between mt-4">
             <button
               onClick={() => setStep(2)}
@@ -295,19 +353,31 @@ function DecisionAnalysis({ value, onChange }: DecisionAnalysisProps) {
 
       {step === 4 && (
         <div>
-          <h2 className="text-lg font-medium mb-4">Conclusion</h2>
-          <p className="text-gray-600 mb-4">
-            Based on your analysis and Stoic principles, what is your reasoned decision?
-          </p>
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-lg font-medium">Conclusion & Implementation</h2>
+            <button
+              onClick={generateImplementationPlan}
+              disabled={isGeneratingPlan || !analysis.trim()}
+              className="flex items-center gap-2 px-4 py-2 bg-purple-50 text-purple-700 rounded-lg hover:bg-purple-100 disabled:opacity-50"
+            >
+              {isGeneratingPlan ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Sparkles className="h-4 w-4" />
+              )}
+              Generate Implementation Plan
+            </button>
+          </div>
           <textarea
             value={conclusion}
             onChange={(e) => {
               setConclusion(e.target.value);
               onChange({ question, factors, analysis, conclusion: e.target.value });
             }}
-            placeholder="Write your conclusion here..."
+            placeholder="Write your conclusion and implementation plan here, or use AI to generate one..."
             className="w-full p-4 border rounded-lg focus:outline-none focus:border-black min-h-[200px] resize-none"
           />
+          {/* Navigation buttons */}
           <div className="flex justify-between mt-4">
             <button
               onClick={() => setStep(3)}

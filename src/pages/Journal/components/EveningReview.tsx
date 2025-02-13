@@ -53,18 +53,19 @@ function EveningReview({ onContentChange, initialContent, onOpenPromptLibrary, o
 
   // First, declare all editors
   const mainEditor = useEditor({
-    extensions: [StarterKit],
+    extensions: [
+      StarterKit.configure({
+        history: {},
+        dropcursor: {},
+        gapcursor: false,
+      }),
+    ],
     content: initialContent?.mainContent || '',
     editorProps: {
       attributes: {
         class: 'prose max-w-none focus:outline-none min-h-[200px]'
       },
-      handleDrop: (view, event, slice, moved) => {
-        if (moved) return false;
-        return true;
-      },
       handlePaste: (view, event) => {
-        // Strip formatting on paste
         const text = event.clipboardData?.getData('text/plain');
         if (text) {
           view.dispatch(view.state.tr.insertText(text));
@@ -77,6 +78,17 @@ function EveningReview({ onContentChange, initialContent, onOpenPromptLibrary, o
     autofocus: 'end'
   });
 
+  // Apply the same StarterKit configuration to all other editors:
+  // - wisdomEditor
+  // - courageEditor
+  // - justiceEditor
+  // - temperanceEditor
+  // - shortcomingsEditor
+  // - learningChallengeEditor
+  // - learningLessonEditor
+  // - preparationChallengesEditor
+  // - preparationApproachEditor
+  // - priorityReflectionEditor
   const priorityReflectionEditor = useEditor({
     extensions: [StarterKit],
     content: initialContent?.priorityReview?.reflection || '',

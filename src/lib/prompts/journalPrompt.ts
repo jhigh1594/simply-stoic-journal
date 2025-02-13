@@ -49,8 +49,47 @@ USER ENTRY:
 
 Remember: Respond with just the follow-up question - no explanations or additional commentary.`;
 
+export const DECISION_ANALYSIS_PROMPT = `As a Stoic advisor, analyze this decision through the Dichotomy of Control:
+
+Question: [QUESTION]
+Factors: [FACTORS]
+
+Provide a structured analysis with these exact sections:
+
+1. WITHIN OUR CONTROL
+List 3-4 specific aspects we have complete control over, each in a single clear sentence.
+
+2. PARTIALLY IN OUR CONTROL
+List 2-3 aspects where we can influence but not determine the outcome, each in a single clear sentence.
+
+3. BEYOND OUR CONTROL
+List 2-3 external factors we must accept, each in a single clear sentence.
+
+4. STOIC APPROACH
+In 2-3 sentences, explain how to move forward focusing on what we can control while accepting what we cannot.
+
+Important: Keep each point concise and avoid repeating information across sections.`;
+
+export const IMPLEMENTATION_PLAN_PROMPT = `Create a concrete action plan for this decision:
+Question: [QUESTION]
+Analysis: [ANALYSIS]
+
+Provide a numbered list of specific, actionable steps that focus only on what is within our control.
+Each step should be clear, measurable, and aligned with Stoic principles.`;
+
 export function createJournalPrompt(entry: string) {
-  // Strip HTML tags to get plain text
   const plainText = entry.replace(/<[^>]*>/g, '');
   return JOURNAL_PROMPT_TEMPLATE.replace('[ENTRY]', plainText);
+}
+
+export function createDecisionAnalysisPrompt(question: string, factors: string) {
+  return DECISION_ANALYSIS_PROMPT
+    .replace('[QUESTION]', question)
+    .replace('[FACTORS]', factors);
+}
+
+export function createImplementationPlanPrompt(question: string, analysis: string) {
+  return IMPLEMENTATION_PLAN_PROMPT
+    .replace('[QUESTION]', question)
+    .replace('[ANALYSIS]', analysis);
 }

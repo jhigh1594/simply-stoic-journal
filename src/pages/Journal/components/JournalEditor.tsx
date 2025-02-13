@@ -82,7 +82,14 @@ function JournalEditor({ content, onContentChange, onContentBlur, type = 'mornin
 `;
   
   const editor = useEditor({
-    extensions: [StarterKit],
+    extensions: [
+      StarterKit.configure({
+        // Configure StarterKit with proper option types
+        history: {},
+        dropcursor: {},
+        gapcursor: false,
+      }),
+    ],
     content: type === 'evening' && !content ? eveningTemplate : content,
     onUpdate: ({ editor }) => {
       onContentChange(editor.getHTML());
@@ -91,7 +98,16 @@ function JournalEditor({ content, onContentChange, onContentBlur, type = 'mornin
       attributes: {
         class: 'prose prose-lg max-w-none focus:outline-none min-h-[500px] px-4',
       },
+      handlePaste: (view, event) => {
+        const text = event.clipboardData?.getData('text/plain');
+        if (text) {
+          view.dispatch(view.state.tr.insertText(text));
+          return true;
+        }
+        return false;
+      },
     },
+    enableCoreExtensions: true,
   });
 
   // Handle blur event for the entire editor container

@@ -57,64 +57,92 @@ export interface DecisionAnalysisResult {
     partial_control: string[];
     outside_control: string[];
     reflection: string;
-  };
-  virtue_analysis: {
-    wisdom: string;
-    justice: string;
-    courage: string;
-    temperance: string;
-  };
-  recommendations: string[];
+  }
 }
 
-// Export the helper function
-export const createStructuredPrompt = (type: 'journal' | 'decision', content: string) => {
-  const prompts = {
-    journal: `
-      Analyze this journal entry from a Stoic perspective and provide insights in the following format:
-      {
-        "summary": "A brief, focused summary of the key points",
-        "themes": ["3-5 main themes, focusing on Stoic principles"],
-        "recommendations": [
-          "3 actionable Stoic recommendations",
-          "Each should be specific and tied to the content",
-          "Focus on practical application"
-        ],
-        "stoic_analysis": "A deeper analysis connecting the entry to Stoic principles, focusing on wisdom, justice, courage, and temperance"
-      }
-    `,
-    decision: `
-      Analyze this decision from a Stoic perspective and provide insights in the following format:
-      {
-        "summary": "A brief, focused summary of the key points",
-        "themes": ["3-5 main themes, focusing on Stoic principles"],
-        "recommendations": [
-          "3 actionable Stoic recommendations",
-          "Each should be specific and tied to the content",
-          "Focus on practical application"
-        ],
-        "stoic_analysis": "A deeper analysis connecting the entry to Stoic principles, focusing on wisdom, justice, courage, and temperance"
-      }
-    `,
-  };
-
-  return prompts[type] + "\n\nContent to analyze:\n" + content;
-};
-
 export async function generateDecisionAnalysis(content: string): Promise<DecisionAnalysisResult> {
-  const model = genAI.getGenerativeModel({ model: MODEL_NAME });
-
   try {
-    const prompt = createStructuredPrompt('decision', content);
+    const model = genAI.getGenerativeModel({ model: MODEL_NAME });
+
+    const prompt = `As a Stoic philosopher and advisor who prioritizes the practical and actionable aspects of Stoicism, analyze this decision through the Dichotomy of Control:
+
+    Provide a clear, structured response with exactly these sections:
+
+    1. WITHIN OUR CONTROL
+    List 3-4 specific aspects we have complete control over, each in a single clear sentence.
+
+    2. PARTIALLY IN OUR CONTROL
+    List 2-3 aspects where we can influence but not determine the outcome, each in a single clear sentence.
+
+    3. BEYOND OUR CONTROL
+    List 2-3 external factors we must accept, each in a single clear sentence.
+
+    4. STOIC APPROACH
+    In 2-3 sentences, explain how to move forward focusing on what we can control while accepting what we cannot.
+
+    Decision details:
+    ${content}`;
+
     const result = await model.generateContent(prompt);
     const response = result.response;
     const text = response.text();
-    
-    return JSON.parse(text);
+
+    // Simplified default result
+    const defaultResult: DecisionAnalysisResult = {
+      dichotomy_of_control: {
+        within_control: [],
+        partial_control: [],
+        outside_control: [],
+        reflection: 'Unable to parse control analysis.'
+      }
+    };
+
+    try {
+      // Parse the response into structured sections
+      const sections = text.split(/\d\./);
+      
+      if (sections.length >= 4) {
+        return {
+          dichotomy_of_control: {
+            within_control: extractList(sections[1], '') || defaultResult.dichotomy_of_control.within_control,
+            partial_control: extractList(sections[2], '') || defaultResult.dichotomy_of_control.partial_control,
+            outside_control: extractList(sections[3], '') || defaultResult.dichotomy_of_control.outside_control,
+            reflection: sections[4]?.trim() || defaultResult.dichotomy_of_control.reflection
+          }
+        };
+      }
+      
+      return defaultResult;
+    } catch (error) {
+      console.error('Failed to parse AI response:', error);
+      return defaultResult;
+    }
   } catch (error) {
     console.error('Failed to generate decision analysis:', error);
-    throw new Error('Failed to analyze decision. Please try again.');
+    throw error;
   }
+}
+
+// Update extractList to handle the new format
+function extractList(text: string, marker: string): string[] {
+  const lines = text?.split('\n') || [];
+  return lines
+    .filter(line => line.trim() && !line.match(/^[A-Z\s]+$/))
+    .map(line => line.replace(/^[•\-\d]+\.?\s*/, '').trim())
+    .filter(Boolean);
+}
+
+function extractSection(text: string, marker: string): string {
+  const lines = text?.split('\n') || [];
+  const startIndex = lines.findIndex(line => line.includes(marker));
+  if (startIndex === -1) return '';
+  
+  let content = [];
+  for (let i = startIndex + 1; i < lines.length; i++) {
+    if (lines[i].match(/[A-Z][a-z]+:/)) break;
+    if (lines[i].trim()) content.push(lines[i].trim());
+  }
+  return content.join('\n');
 }
 
 export async function enhanceGoalDescription(description: string): Promise<string> {
@@ -177,4 +205,40 @@ export async function withRetry<T>(
   }
   
   throw lastError!;
+}
+export interface ActionPlanResult {
+  recommendations: string[];
+}
+
+export async function generateActionPlan(question: string, analysis: string): Promise<ActionPlanResult> {
+  try {
+    const model = genAI.getGenerativeModel({ model: MODEL_NAME });
+
+    const prompt = `As a Stoic philosopher and advisor who prioritizes the practical and actionable aspects of Stoicism, create a concrete action plan for this decision:
+
+    Question: ${question}
+    Previous Analysis: ${analysis}
+
+    Provide 3-5 specific, actionable steps that:
+    1. Focus exclusively on what is within our control
+    2. Are clear and measurable
+    3. Align with Stoic principles
+    4. Can be implemented immediately
+
+    Format each step as a clear, direct instruction starting with an action verb.`;
+
+    const result = await model.generateContent(prompt);
+    const response = result.response;
+    const text = response.text();
+
+    const recommendations = text
+      .split('\n')
+      .map(line => line.replace(/^\d+\.\s*/, '').trim())
+      .filter(line => line && !line.match(/^[A-Z\s]+$/));
+
+    return { recommendations };
+  } catch (error) {
+    console.error('Failed to generate action plan:', error);
+    throw error;
+  }
 }

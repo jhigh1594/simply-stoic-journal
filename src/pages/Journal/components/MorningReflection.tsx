@@ -71,7 +71,13 @@ export const MorningReflection: React.FC<MorningReflectionProps> = ({
   };
 
   const mainEditor = useEditor({
-    extensions: [StarterKit],
+    extensions: [
+      StarterKit.configure({
+        history: {},
+        dropcursor: {},
+        gapcursor: false,
+      }),
+    ],
     content: content,
     onUpdate: ({ editor }) => {
       onContentChange(editor.getHTML());
@@ -79,10 +85,6 @@ export const MorningReflection: React.FC<MorningReflectionProps> = ({
     editorProps: {
       attributes: {
         class: 'prose max-w-none focus:outline-none min-h-[200px]'
-      },
-      handleDrop: (view, event, slice, moved) => {
-        if (moved) return false;
-        return true;
       },
       handlePaste: (view, event) => {
         const text = event.clipboardData?.getData('text/plain');
