@@ -5,6 +5,7 @@ import type { JournalEntry } from '../../../types/journal';
 // Remove the local interface and import it from gemini.ts
 import { generateDecisionAnalysis, DecisionAnalysisResult } from '../../../lib/gemini';
 import { createDecisionAnalysisPrompt, createImplementationPlanPrompt } from '../../../lib/prompts/journalPrompt';
+import { generateActionPlan } from '../../../lib/gemini';  // Add generateActionPlan
 
 interface Factor {
   text: string;
@@ -128,11 +129,9 @@ function DecisionAnalysis({ value, onChange }: DecisionAnalysisProps) {
   const generateImplementationPlan = async () => {
     setIsGeneratingPlan(true);
     try {
-      const result = await generateDecisionAnalysis(
-        createImplementationPlanPrompt(question, analysis)
-      );
+      const result = await generateActionPlan(question, analysis);
       
-      const newConclusion = `## Action Steps\n${result.recommendations.join('\n')}`;
+      const newConclusion = `## Action Steps\n${result.recommendations.map(step => `• ${step}`).join('\n')}`;
       setConclusion(newConclusion);
       onChange({ 
         question, 

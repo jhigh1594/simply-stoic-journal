@@ -57,7 +57,8 @@ export interface DecisionAnalysisResult {
     partial_control: string[];
     outside_control: string[];
     reflection: string;
-  }
+  };
+  recommendations: string[];  // Add this line
 }
 
 export async function generateDecisionAnalysis(content: string): Promise<DecisionAnalysisResult> {
@@ -87,14 +88,15 @@ export async function generateDecisionAnalysis(content: string): Promise<Decisio
     const response = result.response;
     const text = response.text();
 
-    // Simplified default result
+    // Update the default result to include recommendations
     const defaultResult: DecisionAnalysisResult = {
       dichotomy_of_control: {
         within_control: [],
         partial_control: [],
         outside_control: [],
         reflection: 'Unable to parse control analysis.'
-      }
+      },
+      recommendations: []  // Add this line
     };
 
     try {
@@ -108,7 +110,8 @@ export async function generateDecisionAnalysis(content: string): Promise<Decisio
             partial_control: extractList(sections[2], '') || defaultResult.dichotomy_of_control.partial_control,
             outside_control: extractList(sections[3], '') || defaultResult.dichotomy_of_control.outside_control,
             reflection: sections[4]?.trim() || defaultResult.dichotomy_of_control.reflection
-          }
+          },
+          recommendations: extractList(sections[4], '') || defaultResult.recommendations  // Add this line
         };
       }
       
@@ -231,14 +234,20 @@ export async function generateActionPlan(question: string, analysis: string): Pr
     const response = result.response;
     const text = response.text();
 
+    if (!text) {
+      console.error('Empty response from AI');
+      return { recommendations: [] };
+    }
+
     const recommendations = text
       .split('\n')
+      .filter(line => line && line.trim()) // Remove empty lines first
       .map(line => line.replace(/^\d+\.\s*/, '').trim())
       .filter(line => line && !line.match(/^[A-Z\s]+$/));
 
-    return { recommendations };
+    return { recommendations: recommendations.length ? recommendations : [] };
   } catch (error) {
     console.error('Failed to generate action plan:', error);
-    throw error;
+    return { recommendations: [] }; // Return empty array instead of throwing
   }
 }
