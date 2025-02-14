@@ -1,7 +1,7 @@
 import React from 'react';
 import QuoteCard from './components/QuoteCard';
 import StatsGrid from './components/StatsGrid';
-import JournalSections from './components/JournalSections';
+import JournalSections from '../Journal/components/JournalSections';
 import GoalsSections from './components/GoalsSections';
 import DailyPriorities from './components/DailyPriorities';
 

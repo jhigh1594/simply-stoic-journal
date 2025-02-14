@@ -1,9 +1,21 @@
 export interface AIInsights {
+  summary?: string;
   analysis: string;
   timestamp: string;
   themes?: string[];
   keywords?: string[];
   sentiment?: string;
+  recommendations?: string[];
+  stoic_analysis?: string;
+  dichotomy_of_control?: {
+    within_control: string[];
+    partial_control: string[];
+    outside_control: string[];
+    reflection?: string;
+  };
+  virtue_analysis?: {
+    [key: string]: string;
+  };
 }
 
 export interface EveningReviewContent {

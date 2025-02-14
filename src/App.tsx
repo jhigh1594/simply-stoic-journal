@@ -23,10 +23,10 @@ function App() {
             </ProtectedRoute>
           }>
             <Route path="/" element={<Home />} />
+            <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/journal/*" element={<Journal />} />
             <Route path="/planning" element={<Planning />} />
             <Route path="/library" element={<Library />} />
-            <Route path="/dashboard" element={<Dashboard />} />
           </Route>
           
           {/* Redirect unmatched routes to home */}

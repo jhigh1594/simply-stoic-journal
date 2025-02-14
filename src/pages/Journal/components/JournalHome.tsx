@@ -2,6 +2,8 @@ import React from 'react';
 import { Calendar, Scale } from 'lucide-react';
 import type { JournalEntry } from '../../../types/journal';
 import DailyQuote from './DailyQuote';
+import LatestJournalEntry from './LatestJournalEntry';
+import LatestDecisionEntry from './LatestDecisionEntry';
 
 interface JournalHomeProps {
   entries: JournalEntry[];
@@ -18,11 +20,15 @@ export default function JournalHome({ entries, onNewEntry, onViewEntry }: Journa
   // Get recent entries
   const recentEntries = entries.slice(0, 2);
 
+  // Get latest entries by type
+  const latestJournal = entries.find(entry => entry.type === 'morning' || entry.type === 'evening');
+  const latestDecision = entries.find(entry => entry.type === 'decision');
+
   return (
     <div className="space-y-6">
       <DailyQuote entries={entries} />
 
-      {/* Quick Actions section remains the same */}
+      {/* Quick Actions section */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <button
           onClick={() => onNewEntry('morning')}
@@ -107,25 +113,15 @@ export default function JournalHome({ entries, onNewEntry, onViewEntry }: Journa
         </div>
       </div>
 
-      {/* Latest Entry section */}
-      {entries.length > 0 && (
-        <div className="bg-white border rounded-lg p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-medium">Latest Entry</h3>
-            <button 
-              onClick={() => onViewEntry(entries[0])}
-              className="text-sm text-blue-600 hover:text-blue-700"
-            >
-              View Full Entry →
-            </button>
-          </div>
-          <p className="text-gray-600">
-            {entries[0].type === 'evening'
-              ? JSON.parse(entries[0].content).mainContent
-              : entries[0].content}
-          </p>
-        </div>
-      )}
+      {/* Latest Entries section */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {latestJournal && (
+          <LatestJournalEntry entry={latestJournal} onViewEntry={onViewEntry} />
+        )}
+        {latestDecision && (
+          <LatestDecisionEntry entry={latestDecision} onViewEntry={onViewEntry} />
+        )}
+      </div>
     </div>
   );
 }

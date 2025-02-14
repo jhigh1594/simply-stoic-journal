@@ -27,6 +27,7 @@ function Sidebar({ onClose }: SidebarProps) {
   const location = useLocation();
 
   const handleNavigation = (path: string) => {
+    console.log('Navigating to:', path); // Add this debug log
     navigate(path);
     onClose?.();
   };

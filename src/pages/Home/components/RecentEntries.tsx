@@ -18,12 +18,39 @@ function RecentEntries({ entries }: RecentEntriesProps) {
     return doc.body.textContent || '';
   };
 
+  const renderEntryContent = (entry: JournalEntry) => {
+    if (entry.type === 'decision') {
+      const decision = JSON.parse(entry.content || '{}');
+      return (
+        <div className="space-y-2">
+          <p className="text-gray-900 font-medium">{decision.question}</p>
+          {decision.factors && decision.factors.length > 0 && (
+            <div className="flex items-center gap-2 text-sm text-gray-600">
+              <span className="w-1 h-1 rounded-full bg-gray-400" />
+              <span>{decision.factors[0].text}</span>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    const content = entry.type === 'evening'
+      ? JSON.parse(entry.content || '{}').mainContent
+      : entry.content;
+
+    return (
+      <p className="text-gray-600 line-clamp-2">
+        {stripHtml(content)}
+      </p>
+    );
+  };
+
   return (
     <div className="bg-white rounded-xl border">
       <div className="flex items-center justify-between p-6 border-b">
         <div className="flex items-center gap-2">
           <BookOpen className="h-5 w-5 text-gray-500" />
-          <h3 className="font-medium">Recent Reflections</h3>
+          <h3 className="font-medium">Recent Entries</h3>
         </div>
         <button
           onClick={() => navigate('/journal')}
@@ -46,11 +73,17 @@ function RecentEntries({ entries }: RecentEntriesProps) {
                 <div className={`px-2.5 py-0.5 rounded-full text-sm ${
                   entry.type === 'morning'
                     ? 'bg-orange-50 text-orange-700'
-                    : 'bg-indigo-50 text-indigo-700'
+                    : entry.type === 'evening'
+                    ? 'bg-indigo-50 text-indigo-700'
+                    : 'bg-green-50 text-green-700'
                 }`}>
-                  {entry.type === 'morning' ? 'Morning' : 'Evening'}
+                  {entry.type === 'morning' 
+                    ? 'Morning' 
+                    : entry.type === 'evening'
+                    ? 'Evening'
+                    : 'Decision'}
                 </div>
-                {entry.mood && (
+                {entry.type !== 'decision' && entry.mood && (
                   <span className="text-sm text-gray-500 capitalize">{entry.mood}</span>
                 )}
               </div>
@@ -69,15 +102,13 @@ function RecentEntries({ entries }: RecentEntriesProps) {
 
             {/* Content Preview */}
             <div className="mb-4">
-              <p className="text-gray-600 line-clamp-2">
-                {stripHtml(entry.content)}
-              </p>
+              {renderEntryContent(entry)}
             </div>
 
             {/* Footer */}
             <div className="flex items-center justify-between">
               {/* Tags */}
-              {entry.tags.length > 0 && (
+              {entry.tags?.length > 0 && (
                 <div className="flex items-center gap-2">
                   {entry.tags.slice(0, 3).map((tag, index) => (
                     <span
@@ -96,7 +127,7 @@ function RecentEntries({ entries }: RecentEntriesProps) {
               )}
 
               {/* AI Insights Preview */}
-              {entry.ai_insights && (
+              {entry.ai_insights && entry.type !== 'decision' && (
                 <div className="flex items-center gap-3">
                   {entry.ai_insights.themes && entry.ai_insights.themes.length > 0 && (
                     <div className="flex items-center gap-1.5 text-purple-600 text-sm">
