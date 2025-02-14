@@ -5,22 +5,27 @@ import JournalSections from './components/JournalSections';
 import GoalsSections from './components/GoalsSections';
 import DailyPriorities from './components/DailyPriorities';
 
-function Dashboard() {
+export default function Dashboard() {
   return (
-    <div className="max-w-5xl mx-auto space-y-8">
-      <StatsGrid />
+    <div className="max-w-5xl mx-auto px-6">
+      <h1 className="text-2xl font-bold mb-6">Dashboard</h1>
+      
       <QuoteCard />
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2">
-          <JournalSections />
-        </div>
-        <div>
+      <StatsGrid />
+
+      <div className="mb-8">
+        <JournalSections />
+      </div>
+
+      {/* Daily Priorities and Goals in a stack */}
+      <div className="space-y-6">
+        <div className="bg-white rounded-lg border p-6">
           <DailyPriorities />
         </div>
+        <div className="space-y-4">
+          <GoalsSections />
+        </div>
       </div>
-      <GoalsSections />
     </div>
   );
 }
-
-export default Dashboard;

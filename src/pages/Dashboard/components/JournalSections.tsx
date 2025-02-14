@@ -16,7 +16,7 @@ interface JournalSection {
 const sections: JournalSection[] = [
   {
     title: 'Morning Reflection',
-    description: 'Start your day with intention',
+    description: 'Start your day with focus, intention, and gratitude',
     action: 'Begin Morning Journal',
     type: 'morning',
     icon: Sunrise,
