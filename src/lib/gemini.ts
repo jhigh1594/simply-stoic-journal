@@ -1,4 +1,4 @@
-import { genAI } from './gemini-config.ts';  // Add .ts extension
+import { genAI } from './gemini-config';  // Remove .ts extension for production builds
 import type { EveningReviewContent, AIInsights } from '../types/journal';
 import { createJournalPrompt } from './prompts/journalPrompt';
 import { MODEL_NAME } from './gemini-config';
