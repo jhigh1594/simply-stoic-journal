@@ -2,6 +2,7 @@ import { X, Trash2, Calendar, Clock, Tag, Sparkles, Target, Brain } from 'lucide
 import { format } from 'date-fns';
 import type { JournalEntry, EveningReviewContent } from '../../../types/journal';
 import AIInsightsSection from './AIInsightsSection';
+import DecisionAnalysisView from './DecisionAnalysisView';
 
 interface JournalEntryViewProps {
   entry: JournalEntry;  // This is non-nullable
@@ -9,16 +10,8 @@ interface JournalEntryViewProps {
   onDelete: () => void;
 }
 
-function JournalEntryView({ entry, onClose, onDelete }: JournalEntryViewProps) {
-  const handleDelete = () => {
-    if (window.confirm('Are you sure you want to delete this entry? This action cannot be undone.')) {
-      onDelete();
-    }
-  };
-
+export default function JournalEntryView({ entry, onClose, onDelete }: JournalEntryViewProps) {
   const renderEveningReviewContent = (content: EveningReviewContent) => {
-    if (entry.type !== 'evening') return null;
-
     return (
       <div className="space-y-8">
         {/* Today's Actions & Character */}
@@ -181,6 +174,12 @@ function JournalEntryView({ entry, onClose, onDelete }: JournalEntryViewProps) {
     );
   };
 
+  const handleDelete = () => {
+    if (window.confirm('Are you sure you want to delete this entry?')) {
+      onDelete();
+    }
+  };
+
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-xl w-full max-w-3xl max-h-[85vh] flex flex-col">
@@ -231,12 +230,15 @@ function JournalEntryView({ entry, onClose, onDelete }: JournalEntryViewProps) {
         <div className="p-6 overflow-y-auto flex-1">
           <div className="max-w-2xl mx-auto space-y-8">
             {/* Main Content */}
-            {entry.type === 'evening' 
-              ? renderEveningReviewContent(JSON.parse(entry.content || '{}') as EveningReviewContent)
-              : <div className="prose prose-gray prose-lg max-w-none">
-                  <div dangerouslySetInnerHTML={{ __html: entry.content || '' }} />
-                </div>
-            }
+            {entry.type === 'decision' && entry.decision_analysis ? (
+              <DecisionAnalysisView data={entry.decision_analysis} />
+            ) : entry.type === 'evening' ? (
+              renderEveningReviewContent(JSON.parse(entry.content || '{}') as EveningReviewContent)
+            ) : (
+              <div className="prose prose-gray prose-lg max-w-none">
+                <div dangerouslySetInnerHTML={{ __html: entry.content || '' }} />
+              </div>
+            )}
 
             {/* Metadata Grid */}
             {renderMetadata()}
@@ -260,5 +262,3 @@ function JournalEntryView({ entry, onClose, onDelete }: JournalEntryViewProps) {
     </div>
   );
 }
-
-export default JournalEntryView;

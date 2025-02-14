@@ -4,6 +4,8 @@ import Home from './pages/Home';
 import Planning from './pages/Planning';
 import { AuthProvider } from './providers/AuthProvider';
 import Journal from './pages/Journal';
+import Library from './pages/Library';
+import Dashboard from './pages/Dashboard';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import AuthPage from './pages/Auth';
 
@@ -21,8 +23,10 @@ function App() {
             </ProtectedRoute>
           }>
             <Route path="/" element={<Home />} />
-            <Route path="/journal" element={<Journal />} />
+            <Route path="/journal/*" element={<Journal />} />
             <Route path="/planning" element={<Planning />} />
+            <Route path="/library" element={<Library />} />
+            <Route path="/dashboard" element={<Dashboard />} />
           </Route>
           
           {/* Redirect unmatched routes to home */}

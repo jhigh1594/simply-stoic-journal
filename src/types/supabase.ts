@@ -34,12 +34,13 @@ export interface Database {
           mood?: string | null
           content?: string | null
           intention?: string | null
-          gratitudeList?: string[] | null; // Changed from gratitude_list
+          gratitudeList?: string[] | null
           priorities?: string[] | null
           tags?: string[] | null
           ai_insights?: Json | null
           created_at?: string
           daily_priorities_id?: string | null
+          decision_analysis?: Json | null  // Add this field
         }
         Update: {
           id?: string
@@ -54,6 +55,7 @@ export interface Database {
           ai_insights?: Json | null
           created_at?: string
           daily_priorities_id?: string | null
+          decision_analysis?: Json | null  // Add this field if not present
         }
       }
       goals: {

@@ -109,7 +109,10 @@ const Journal: React.FC = () => {
   // Load entry from URL
   React.useEffect(() => {
     const loadEntryFromUrl = async () => {
-      if (!params.id) return;
+      if (!params.id) {
+        setSelectedEntry(null);
+        return;
+      }
       
       try {
         const entry = await getEntry(params.id);
@@ -196,9 +199,11 @@ const Journal: React.FC = () => {
       date: new Date().toISOString(),
       user_id: userId,
       tags,
-      type: journalType,
+      type: journalType,  // Make sure this matches the database constraint
       mood: mood ?? undefined,
-      content: journalType === 'evening' 
+      content: journalType === 'decision' 
+        ? JSON.stringify(decisionAnalysis)  // Add this line to store decision analysis as content
+        : journalType === 'evening'
         ? JSON.stringify(eveningContent)
         : content,
       intention: journalType === 'morning' ? intention : '',
@@ -266,9 +271,9 @@ const Journal: React.FC = () => {
         <JournalEntryView
           entry={selectedEntry}
           onClose={() => {
-            setSelectedEntry(null);
             setMode('home');
             navigate('/journal');
+            setSelectedEntry(null);  // Move this to the end
           }}
           onDelete={() => handleDeleteEntry(selectedEntry)}
         />
