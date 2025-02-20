@@ -1,5 +1,5 @@
 import React from 'react';
-import { ChevronDown, ChevronUp, AlertTriangle, Calendar, Target } from 'lucide-react';
+import { ChevronDown, ChevronUp, AlertTriangle, Calendar, Target, Pencil } from 'lucide-react';
 import type { CheckpointGoal } from '../../../types/planning';
 import { planningService } from '../../../services/planning';
 import LoadingSpinner from '../../../components/LoadingSpinner';
@@ -94,36 +94,107 @@ export const CheckpointGoalCard = ({ goal, onUpdate, showBigGoal = true }: Check
     }
   };
 
+  const [isEditing, setIsEditing] = React.useState(false);
+  const [editedGoal, setEditedGoal] = React.useState<CheckpointGoal>(goal);
+
+  const handleSave = async () => {
+    try {
+      setIsUpdating(true);
+      await planningService.updateCheckpointGoal(goal.id, {
+        title: editedGoal.title,
+        description: editedGoal.description,
+        target_date: editedGoal.target_date,
+        blockers: editedGoal.blockers,
+      });
+      setIsEditing(false);
+      onUpdate();
+    } catch (error) {
+      console.error('Failed to update checkpoint:', error);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
   return (
     <div className="bg-white rounded-lg border hover:border-gray-300 transition-colors">
       <div className="p-4">
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1">
-            <div className="flex items-center gap-2 mb-2">
-              <Target className="h-4 w-4 text-gray-400" />
-              <h3 className="font-medium">{goal.title}</h3>
-            </div>
-            {goal.description && (
-              <p className="text-sm text-gray-600 mb-3">{goal.description}</p>
-            )}
-            <div className="flex items-center gap-3 text-sm">
-              <span className={`px-2 py-0.5 rounded-full capitalize ${getStatusColor(goal.status)}`}>
-                {goal.status.replace('_', ' ')}
-              </span>
-              <span className="text-gray-400">•</span>
-              <span className="text-gray-600 flex items-center gap-1">
-                <Calendar className="h-3 w-3" />
-                {new Date(goal.target_date).toLocaleDateString()}
-              </span>
-              <span className="text-gray-400">•</span>
-              <span className="text-gray-600">{localProgress}% complete</span>
-              {showBigGoal && bigGoal && (
-                <>
+            {isEditing ? (
+              <div className="space-y-3">
+                <input
+                  type="text"
+                  value={editedGoal.title}
+                  onChange={(e) => setEditedGoal({ ...editedGoal, title: e.target.value })}
+                  className="w-full px-2 py-1 border rounded"
+                />
+                <textarea
+                  value={editedGoal.description || ''}
+                  onChange={(e) => setEditedGoal({ ...editedGoal, description: e.target.value })}
+                  className="w-full px-2 py-1 border rounded"
+                  rows={2}
+                />
+                <div className="flex gap-3">
+                  <input
+                    type="date"
+                    value={editedGoal.target_date}
+                    onChange={(e) => setEditedGoal({ ...editedGoal, target_date: e.target.value })}
+                    className="px-2 py-1 border rounded"
+                  />
+                </div>
+                <div className="flex justify-end gap-2 mt-4">
+                  <button
+                    onClick={() => setIsEditing(false)}
+                    className="px-3 py-1 text-sm border rounded-lg hover:bg-gray-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleSave}
+                    disabled={isUpdating}
+                    className="px-3 py-1 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50"
+                  >
+                    {isUpdating ? 'Saving...' : 'Save'}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div>
+                <div className="flex items-center justify-between gap-2 mb-2">
+                  <div className="flex items-center gap-2">
+                    <Target className="h-4 w-4 text-gray-400" />
+                    <h3 className="font-medium">{goal.title}</h3>
+                  </div>
+                  <button
+                    onClick={() => setIsEditing(true)}
+                    className="p-1 text-sm text-gray-500 hover:bg-gray-100 rounded"
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </button>
+                </div>
+                {goal.description && (
+                  <p className="text-sm text-gray-600 mb-3">{goal.description}</p>
+                )}
+                <div className="flex items-center gap-3 text-sm">
+                  <span className={`px-2 py-0.5 rounded-full capitalize ${getStatusColor(goal.status)}`}>
+                    {goal.status.replace('_', ' ')}
+                  </span>
                   <span className="text-gray-400">•</span>
-                  <span className="text-gray-600">Related to: {bigGoal.title}</span>
-                </>
-              )}
-            </div>
+                  <span className="text-gray-600 flex items-center gap-1">
+                    <Calendar className="h-3 w-3" />
+                    {new Date(goal.target_date).toLocaleDateString()}
+                  </span>
+                  <span className="text-gray-400">•</span>
+                  <span className="text-gray-600">{localProgress}% complete</span>
+                  {showBigGoal && bigGoal && (
+                    <>
+                      <span className="text-gray-400">•</span>
+                      <span className="text-gray-600">Related to: {bigGoal.title}</span>
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="flex items-center gap-2">

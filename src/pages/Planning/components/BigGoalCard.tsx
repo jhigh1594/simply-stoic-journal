@@ -1,5 +1,5 @@
 import React from 'react';
-import { ChevronDown, ChevronUp, Scale, Target, Calendar } from 'lucide-react';
+import { ChevronDown, ChevronUp, Scale, Target, Calendar, Pencil } from 'lucide-react';
 import { BigGoal, GoalCategory } from '../../../types/planning';
 import { planningService } from '../../../services/planning';
 import { CheckpointGoalCard } from './CheckpointGoalCard';  // Change to named import
@@ -130,6 +130,25 @@ const BigGoalCard: React.FC<BigGoalCardProps> = ({
     return <p className="text-sm text-gray-500">No checkpoint goals yet.</p>;
   };
 
+  const handleSave = async () => {
+    try {
+      setIsUpdating(true);
+      await planningService.updateBigGoal(goal.id, {
+        title: editedGoal.title,
+        description: editedGoal.description,
+        category: editedGoal.category,
+        target_date: editedGoal.target_date,
+        status: editedGoal.status,
+      });
+      setIsEditing(false);
+      onUpdate();
+    } catch (error) {
+      console.error('Failed to update goal:', error);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
   return (
     <div className="bg-white rounded-lg border hover:border-gray-300 transition-colors">
       <div className="p-4">
@@ -168,12 +187,35 @@ const BigGoalCard: React.FC<BigGoalCardProps> = ({
                     className="px-2 py-1 border rounded"
                   />
                 </div>
+                <div className="flex justify-end gap-2 mt-4">
+                  <button
+                    onClick={() => setIsEditing(false)}
+                    className="px-3 py-1 text-sm border rounded-lg hover:bg-gray-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleSave}
+                    disabled={isUpdating}
+                    className="px-3 py-1 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50"
+                  >
+                    {isUpdating ? 'Saving...' : 'Save'}
+                  </button>
+                </div>
               </div>
             ) : (
               <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <Target className="h-4 w-4 text-gray-400" />
-                  <h3 className="font-medium">{goal.title}</h3>
+                <div className="flex items-center justify-between gap-2 mb-2">
+                  <div className="flex items-center gap-2">
+                    <Target className="h-4 w-4 text-gray-400" />
+                    <h3 className="font-medium">{goal.title}</h3>
+                  </div>
+                  <button
+                    onClick={() => setIsEditing(true)}
+                    className="p-1 text-sm text-gray-500 hover:bg-gray-100 rounded"
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </button>
                 </div>
                 {goal.description && (
                   <p className="text-sm text-gray-600 mb-3">{goal.description}</p>
