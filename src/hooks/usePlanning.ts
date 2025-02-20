@@ -4,7 +4,7 @@ import type {
   BigGoal,
   CheckpointGoal,
   DailySystem,
-  AntiGoal,
+  // Remove AntiGoal import
   ABCTracking,
   MonthlyReview
 } from '../types/planning';
@@ -15,7 +15,7 @@ export function usePlanning() {
   const [bigGoals, setBigGoals] = useState<BigGoal[]>([]);
   const [checkpointGoals, setCheckpointGoals] = useState<{ [key: string]: CheckpointGoal[] }>({});
   const [dailySystems, setDailySystems] = useState<DailySystem[]>([]);
-  const [antiGoals, setAntiGoals] = useState<AntiGoal[]>([]);
+  // Remove antiGoals state
   const [abcTracking, setAbcTracking] = useState<ABCTracking[]>([]);
   const [monthlyReview, setMonthlyReview] = useState<MonthlyReview | null>(null);
   

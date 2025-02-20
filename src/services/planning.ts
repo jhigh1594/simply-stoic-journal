@@ -96,7 +96,7 @@ export const planningService = {
     const { data, error } = await supabase
       .from('big_goals')
       .select('*')
-      .order('created_at', { ascending: false }) as { data: BigGoalsTable['big_goals']['Row'][], error: any };
+      .order('created_at', { ascending: false });
 
     if (error) throw error;
     return data.map(toBigGoal);
@@ -116,7 +116,10 @@ export const planningService = {
   async updateBigGoal(id: string, updates: Partial<Omit<BigGoal, 'id' | 'created_at' | 'updated_at'>>) {
     const { data, error } = await supabase
       .from('big_goals')
-      .update({ ...updates, updated_at: new Date().toISOString() })
+      .update({
+        ...updates,
+        updated_at: new Date().toISOString()
+      })
       .eq('id', id)
       .select()
       .single();
@@ -126,7 +129,6 @@ export const planningService = {
   },
 
   // Checkpoint Goals
-  // Modify the getCheckpointGoals function
   async getCheckpointGoals(big_goal_id?: string) {
     let query = supabase
       .from('checkpoint_goals')

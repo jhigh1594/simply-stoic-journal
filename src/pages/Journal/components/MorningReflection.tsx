@@ -207,7 +207,6 @@ export const MorningReflection: React.FC<MorningReflectionProps> = ({
                 goal={goal}
                 isExpanded={expandedGoals.includes(goal.id)}
                 onToggle={() => toggleGoal(goal.id)}
-                checkpoints={expandedGoals.includes(goal.id) ? checkpointGoals[goal.id] : []}
                 onCheckpointUpdate={() => handleCheckpointUpdate(goal.id)}
                 onUpdate={() => loadBigGoals()}
               />
