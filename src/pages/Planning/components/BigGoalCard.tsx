@@ -32,9 +32,10 @@ const BigGoalCard: React.FC<BigGoalCardProps> = ({
   const isExpanded = controlledExpanded ?? internalExpanded;
   const handleToggle = onToggle ?? setInternalExpanded;
 
+  // Update the useEffect for loading checkpoints
   React.useEffect(() => {
     const loadGoalCheckpoints = async () => {
-      if (!isExpanded) return;
+      if (!isExpanded || !goal.id) return;
       try {
         setIsLoadingCheckpoints(true);
         await loadCheckpointGoals(goal.id);
@@ -44,9 +45,34 @@ const BigGoalCard: React.FC<BigGoalCardProps> = ({
         setIsLoadingCheckpoints(false);
       }
     };
-
+  
     loadGoalCheckpoints();
   }, [goal.id, isExpanded, loadCheckpointGoals]);
+  
+  // Update the checkpoints rendering section
+  {isLoadingCheckpoints ? (
+    <div className="text-center py-4">
+      <LoadingSpinner size="sm" />
+    </div>
+  ) : checkpointGoals[goal.id]?.length > 0 ? (
+    checkpointGoals[goal.id].map((checkpoint) => (
+      <CheckpointGoalCard 
+        key={checkpoint.id} 
+        goal={checkpoint}
+        onUpdate={() => {
+          if (onCheckpointUpdate) {
+            // Handle the Promise without returning it
+            onCheckpointUpdate().catch(error => {
+              console.error('Error updating checkpoint:', error);
+            });
+          }
+        }}
+        showBigGoal={false}
+      />
+    ))
+  ) : (
+    <p className="text-sm text-gray-500">No checkpoint goals yet.</p>
+  )}
 
   const handleStatusChange = async (status: BigGoal['status']) => {
     try {
@@ -245,14 +271,19 @@ const BigGoalCard: React.FC<BigGoalCardProps> = ({
                 <div className="text-center py-4">
                   <LoadingSpinner size="sm" />
                 </div>
-              ) : checkpoints?.length > 0 ? (
-                checkpoints.map((checkpoint: CheckpointGoal) => (
+              ) : checkpointGoals && checkpointGoals[goal.id]?.length > 0 ? (
+                checkpointGoals[goal.id].map((checkpoint) => (
                   <CheckpointGoalCard 
                     key={checkpoint.id} 
                     goal={checkpoint}
                     onUpdate={() => {
-                      onCheckpointUpdate?.();
+                      if (onCheckpointUpdate) {
+                        onCheckpointUpdate().catch(error => {
+                          console.error('Error updating checkpoint:', error);
+                        });
+                      }
                     }}
+                    showBigGoal={false}
                   />
                 ))
               ) : (
