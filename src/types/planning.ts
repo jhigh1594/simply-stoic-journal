@@ -98,3 +98,34 @@ export interface GoalReflection extends BaseEntity {
   obstacles: string[];
   strategies: string[];
 }
+// Add these type definitions
+export interface Goal {
+  id: string;
+  title: string;
+  description?: string;
+  timeframe: string;
+  priority: 'high' | 'medium' | 'low';
+  status: 'not_started' | 'in_progress' | 'completed' | 'abandoned';
+  progress: number;
+  dueDate?: string;
+  createdAt: string;
+  subTasks: SubTask[];
+  user_id: string;
+}
+
+export interface SubTask {
+  id: string;
+  title: string;
+  status: 'pending' | 'completed';
+  createdAt: string;
+}
+
+export interface GoalTemplate {
+  id: string;
+  title: string;
+  description?: string;
+  timeframe: string;
+  priority: 'high' | 'medium' | 'low';
+  createdAt: string;
+  subTasks: SubTask[];
+}

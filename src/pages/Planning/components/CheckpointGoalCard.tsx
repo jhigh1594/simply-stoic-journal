@@ -78,6 +78,22 @@ export const CheckpointGoalCard = ({ goal, onUpdate, showBigGoal = true }: Check
     [goal.id] // Remove onUpdate from dependencies
   );
 
+  // Add proper error handling for progress updates
+  const handleProgressUpdate = async (progress: number) => {
+    try {
+      setIsProgressUpdating(true);
+      await planningService.updateCheckpointGoal(goal.id, { progress });
+      setLocalProgress(progress);
+      onUpdate();
+    } catch (error) {
+      console.error('Failed to update checkpoint progress:', error);
+      // Revert to previous progress on error
+      setLocalProgress(goal.progress);
+    } finally {
+      setIsProgressUpdating(false);
+    }
+  };
+
   return (
     <div className="bg-white rounded-lg border hover:border-gray-300 transition-colors">
       <div className="p-4">

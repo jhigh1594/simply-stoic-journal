@@ -1,5 +1,5 @@
 import { supabase } from '../lib/supabase';
-import type { Goal, GoalTemplate, SubTask } from '../types/planning';
+import type { Goal, GoalTemplate, SubTask, CheckpointGoal } from '../types/planning';
 import type { Database } from '../types/supabase';
 
 type DBGoal = Database['public']['Tables']['goals']['Row'];
@@ -27,7 +27,8 @@ const toGoal = async (dbGoal: DBGoal): Promise<Goal> => {
     progress: dbGoal.progress,
     dueDate: dbGoal.due_date || undefined,
     createdAt: dbGoal.created_at,
-    subTasks: subTasks.map(toSubTask)
+    subTasks: subTasks.map(toSubTask),
+    user_id: dbGoal.user_id
   };
 };
 
@@ -82,7 +83,7 @@ export const goalsService = {
         priority: goal.priority,
         status: goal.status || 'not_started',
         progress: goal.progress || 0,
-        due_date: goal.dueDate, // Convert to snake_case for database
+        due_date: goal.dueDate,
         user_id: goal.user_id
       })
       .select()
@@ -186,6 +187,10 @@ export const goalsService = {
     const template = await this.getTemplate(templateId);
     if (!template) throw new Error('Template not found');
 
+    const { data: userData } = await supabase.auth.getUser();
+    const user_id = userData.user?.id;
+    if (!user_id) throw new Error('User not authenticated');
+
     const goal = await this.createGoal({
       title: template.title,
       description: template.description,
@@ -193,7 +198,8 @@ export const goalsService = {
       priority: template.priority,
       status: 'not_started',
       progress: 0,
-      dueDate
+      dueDate,
+      user_id
     });
 
     // Create subtasks if template has them
@@ -215,5 +221,36 @@ export const goalsService = {
 
     if (error) throw error;
     return template ? toTemplate(template) : null;
+  },  // Add missing comma here
+
+  // Add these methods to goalsService
+  async getCheckpointGoals(bigGoalId: string) {
+    const { data: checkpoints, error } = await supabase
+      .from('checkpoint_goals')
+      .select('*')
+      .eq('big_goal_id', bigGoalId)
+      .order('created_at', { ascending: true });
+  
+    if (error) throw error;
+    return checkpoints;
+  },  // Add comma here
+  
+  async createCheckpointGoal(checkpoint: Omit<CheckpointGoal, 'id' | 'createdAt'>) {
+    const { data, error } = await supabase
+      .from('checkpoint_goals')
+      .insert({
+        title: checkpoint.title,
+        description: checkpoint.description,
+        big_goal_id: checkpoint.big_goal_id,
+        status: checkpoint.status || 'not_started',
+        progress: checkpoint.progress || 0,
+        target_date: checkpoint.target_date,
+        blockers: checkpoint.blockers || []
+      })
+      .select()
+      .single();
+  
+    if (error) throw error;
+    return data;
   }
 };

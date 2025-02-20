@@ -245,16 +245,13 @@ export default function JournalEntryView({ entry, onClose, onDelete }: JournalEn
 
             {/* AI Insights */}
             {entry.ai_insights && Object.keys(entry.ai_insights).length > 0 && (
-              <>
-                {console.log('AI Insights:', entry.ai_insights)}
-                <div className="mt-8">
-                  <AIInsightsSection 
-                    insights={entry.ai_insights} 
-                    isLoading={false}
-                    error={null}
-                  />
-                </div>
-              </>
+              <div className="mt-8">
+                <AIInsightsSection 
+                  insights={entry.ai_insights} 
+                  isLoading={false}
+                  error={null}
+                />
+              </div>
             )}
           </div>
         </div>

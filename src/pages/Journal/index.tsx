@@ -110,7 +110,7 @@ const Journal: React.FC = () => {
   React.useEffect(() => {
     const loadEntryFromUrl = async () => {
       if (!params.id) {
-        setSelectedEntry(null);
+        setSelectedEntry(null);  // This is correct
         return;
       }
       
@@ -120,12 +120,12 @@ const Journal: React.FC = () => {
           setSelectedEntry(entry);
           setMode('view');
         } else {
-          setSelectedEntry(null);
+          setSelectedEntry(null);  // Changed from {} to null
           navigate('/journal');
         }
       } catch (error) {
         console.error('Failed to load entry:', error);
-        setSelectedEntry(null);
+        setSelectedEntry(null);  // Changed from {} to null
         navigate('/journal');
       }
     };
