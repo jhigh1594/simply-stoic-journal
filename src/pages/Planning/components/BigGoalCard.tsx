@@ -48,6 +48,7 @@ const BigGoalCard: React.FC<BigGoalCardProps> = ({
     loadGoalCheckpoints();
   }, [goal.id, isExpanded, loadCheckpointGoals]);
   
+  // This block should be removed as it's incorrectly placed
   // Update the checkpoints rendering section
   {isLoadingCheckpoints ? (
     <div className="text-center py-4">
@@ -60,7 +61,6 @@ const BigGoalCard: React.FC<BigGoalCardProps> = ({
         goal={checkpoint}
         onUpdate={() => {
           if (onCheckpointUpdate) {
-            // Handle the Promise without returning it
             onCheckpointUpdate().catch(error => {
               console.error('Error updating checkpoint:', error);
             });
