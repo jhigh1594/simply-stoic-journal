@@ -5,6 +5,7 @@ import { useAsyncAction } from './useAsyncAction';
 
 export function useQuotes() {
   const [quotes, setQuotes] = useState<Quote[]>([]);
+  
   const { isLoading, error, execute } = useAsyncAction();
 
   const loadQuotes = useCallback(async () => {
@@ -25,11 +26,15 @@ export function useQuotes() {
     const data = await execute(() => quotesService.toggleLike(quoteId, userId));
     if (data) {
       setQuotes(prev => prev.map(quote => 
-        quote.id === quoteId ? data : quote
+        quote.id === quoteId 
+          ? { ...quote, ...data } as Quote 
+          : quote
       ));
       return data;
     }
   }, [execute]);
+
+  // Remove unused updateQuotes function
 
   return {
     quotes,

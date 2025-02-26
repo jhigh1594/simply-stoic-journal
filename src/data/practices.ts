@@ -11,7 +11,9 @@ export const practices: Practice[] = [
       'Focus on your response rather than the challenge itself',
       'Remember that this is a preparation, not a prediction'
     ],
-    category: 'morning'
+    category: 'morning',
+    is_community: false,
+    likes: 0
   },
   {
     id: '2',
@@ -35,7 +37,9 @@ export const practices: Practice[] = [
       'Gradually expand your view',
       'Notice how your perspective changes'
     ],
-    category: 'general'
+    category: 'general',
+    is_community: false,
+    likes: 0
   },
   {
     id: '4',
@@ -124,7 +128,7 @@ export const practices: Practice[] = [
     category: 'general'
   },
   {
-    id: '10',
+    id: '11', // Fixed duplicate ID
     title: 'Self-Dialogue Writing',
     description: 'Examine your thoughts through written dialogue',
     instructions: 'Write a dialogue between yourself and your wiser self. Present your concerns and challenges, then respond with reason and wisdom.',

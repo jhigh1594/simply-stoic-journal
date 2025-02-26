@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { practicesService } from '../services/practices';
 import type { Practice } from '../types/library';
 import { useAsyncAction } from './useAsyncAction';
@@ -9,13 +9,13 @@ export function usePractices() {
 
   const loadPractices = useCallback(async () => {
     const data = await execute(() => practicesService.getPractices());
-    if (data) setPractices(data);
+    if (data) setPractices(data as Practice[]);
   }, [execute]);
 
   const createPractice = useCallback(async (practice: Omit<Practice, 'id' | 'likes' | 'liked_by' | 'completions'>) => {
     const data = await execute(() => practicesService.createPractice(practice));
     if (data) {
-      setPractices(prev => [data, ...prev]);
+      setPractices(prev => [...prev, data as Practice]);
       return data;
     }
   }, [execute]);
@@ -24,7 +24,7 @@ export function usePractices() {
     const data = await execute(() => practicesService.toggleLike(practiceId, userId));
     if (data) {
       setPractices(prev => prev.map(practice =>
-        practice.id === practiceId ? data : practice
+        practice.id === practiceId ? { ...practice, ...data } as Practice : practice
       ));
       return data;
     }
@@ -34,26 +34,16 @@ export function usePractices() {
     const data = await execute(() => practicesService.completePractice(practiceId, userId, notes));
     if (data) {
       setPractices(prev => prev.map(practice =>
-        practice.id === practiceId ? data : practice
+        practice.id === practiceId ? { ...practice, ...data } as Practice : practice
       ));
       return data;
     }
   }, [execute]);
 
-  const searchPractices = useCallback(async (query: string) => {
-    const data = await execute(() => practicesService.searchPractices(query));
-    if (data) setPractices(data);
-  }, [execute]);
-
-  const getPracticesByCategory = useCallback(async (category: Practice['category']) => {
-    const data = await execute(() => practicesService.getPracticesByCategory(category));
-    if (data) setPractices(data);
-  }, [execute]);
-
-  const getLikedPractices = useCallback(async (userId: string) => {
-    const data = await execute(() => practicesService.getLikedPractices(userId));
-    if (data) setPractices(data);
-  }, [execute]);
+  // Load practices on mount
+  useEffect(() => {
+    loadPractices();
+  }, [loadPractices]);
 
   return {
     practices,
@@ -62,9 +52,6 @@ export function usePractices() {
     loadPractices,
     createPractice,
     toggleLike,
-    completePractice,
-    searchPractices,
-    getPracticesByCategory,
-    getLikedPractices
+    completePractice
   };
 }

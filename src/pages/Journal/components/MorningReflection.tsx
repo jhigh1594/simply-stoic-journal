@@ -7,6 +7,7 @@ import { usePriorities } from '../../../hooks/usePriorities';
 import { usePlanning } from '../../../hooks/usePlanning';
 import BigGoalCard from '../../../pages/Planning/components/BigGoalCard';
 import { BigGoal } from '../../../types/planning';
+import { Editor } from '../../../components/Editor';
 
 type MoodType = 'challenging' | 'neutral' | 'positive';
 
@@ -308,43 +309,13 @@ export const MorningReflection: React.FC<MorningReflectionProps> = ({
             </button>
           </div>
         </div>
-        <div className="border rounded-lg overflow-hidden">
-          <div className="border-b p-2 flex gap-2">
-            <EditorButton
-              onClick={() => mainEditor?.chain().focus().toggleBold().run()}
-              isActive={mainEditor?.isActive('bold')}
-              icon={<Bold className="h-4 w-4" />}
-              label="Toggle bold"
-            />
-            <EditorButton
-              onClick={() => mainEditor?.chain().focus().toggleItalic().run()}
-              isActive={mainEditor?.isActive('italic')}
-              icon={<Italic className="h-4 w-4" />}
-              label="Toggle italic"
-            />
-            <EditorButton
-              onClick={() => mainEditor?.chain().focus().toggleBulletList().run()}
-              isActive={mainEditor?.isActive('bulletList')}
-              icon={<List className="h-4 w-4" />}
-              label="Toggle bullet list"
-            />
-            <EditorButton
-              onClick={() => mainEditor?.chain().focus().toggleBlockquote().run()}
-              isActive={mainEditor?.isActive('blockquote')}
-              icon={<Quote className="h-4 w-4" />}
-              label="Toggle blockquote"
-            />
-          </div>
-          <div className="p-4 relative">
-            <EditorContent editor={mainEditor} />
-            <EditorAIPrompt 
-              editor={mainEditor}
-              onPromptGenerated={handlePromptSelect}
-              model="gemini-2.0-pro-exp-02-05"
-              key="mainEditorPrompt"
-            />
-          </div>
-        </div>
+        <Editor
+          content={content}
+          onContentChange={onContentChange}
+          onContentBlur={onContentBlur}
+          onPromptSelect={onPromptSelect}
+          onOpenPromptLibrary={onOpenPromptLibrary}
+        />
       </section>
     </div>
   );

@@ -6,6 +6,7 @@ import { Bold, Italic, List, Quote } from 'lucide-react';
 import type { EveningReviewContent } from '../../../types/journal';
 import { EditorAIPrompt } from '../../../components/EditorAIPrompt';
 import { usePriorities } from '../../../hooks/usePriorities';
+import { Editor } from '../../../components/Editor';
 
 interface EveningReviewProps {
   onContentChange?: (content: EveningReviewContent) => void;
@@ -180,18 +181,94 @@ const EveningReview: React.FC<EveningReviewProps> = ({
 
   return (
     <motion.div className="space-y-8">
-      <PriorityReview
-        priorities={priorities?.priorities || []}
-        completedPriorities={completedPriorities}
-        isLoading={isLoading}
-        onTogglePriority={handlePriorityToggle}
-        reflectionEditor={priorityReflectionEditor}
-      />
-
-      {/* Rest of the sections remain similar but with improved organization */}
-      {/* ... */}
-
-      {/* Main Editor Section */}
+      {/* Priority Review section */}
+      <section>
+        <PriorityReview
+          priorities={priorities?.priorities || []}
+          completedPriorities={completedPriorities}
+          isLoading={isLoading}
+          onTogglePriority={handlePriorityToggle}
+          reflectionEditor={priorityReflectionEditor}
+        />
+      </section>
+    
+      {/* Today's Actions & Character section */}
+      <section className="mt-8">
+        <h2 className="text-xl font-semibold mb-4">📝 Today's Actions & Character</h2>
+        <blockquote className="border-l-4 border-gray-200 pl-4 italic text-gray-600 mb-6">
+          "First say to yourself what you would be; then do what you have to do." - Epictetus
+        </blockquote>
+        
+        <h3 className="text-lg font-medium mb-4">What virtues did I practice today?</h3>
+        <div className="space-y-6">
+          <div>
+            <h4 className="text-lg font-medium mb-2">Wisdom</h4>
+            <p className="text-gray-600 text-sm mb-2">(a moment of good judgment)</p>
+            <EditorContent editor={wisdomEditor} />
+          </div>
+      
+          <div>
+            <h3 className="text-lg font-medium mb-2">Courage</h3>
+            <p className="text-gray-600 text-sm mb-2">(facing something difficult)</p>
+            <EditorContent editor={courageEditor} />
+          </div>
+      
+          <div>
+            <h3 className="text-lg font-medium mb-2">Justice</h3>
+            <p className="text-gray-600 text-sm mb-2">(treating others fairly)</p>
+            <EditorContent editor={justiceEditor} />
+          </div>
+      
+          <div>
+            <h3 className="text-lg font-medium mb-2">Temperance</h3>
+            <p className="text-gray-600 text-sm mb-2">(showing self-control)</p>
+            <EditorContent editor={temperanceEditor} />
+          </div>
+      
+          <div>
+            <h3 className="text-lg font-medium mb-2">Shortcomings</h3>
+            <EditorContent editor={shortcomingsEditor} />
+          </div>
+        </div>
+      </section>
+    
+      {/* Learning & Growth */}
+      <section>
+        <h2 className="text-xl font-semibold mb-4">💡 Learning & Growth</h2>
+        <blockquote className="border-l-4 border-gray-200 pl-4 italic text-gray-600 mb-6">
+          "Every day we should bring some worthy saying to our minds." - Seneca
+        </blockquote>
+        <div className="space-y-6">
+          <div>
+            <h3 className="text-lg font-medium mb-2">1. What unexpected challenge taught me something today?</h3>
+            <EditorContent editor={learningChallengeEditor} />
+          </div>
+          <div>
+            <h3 className="text-lg font-medium mb-2">2. How will I use this lesson tomorrow?</h3>
+            <EditorContent editor={learningLessonEditor} />
+          </div>
+        </div>
+      </section>
+    
+      {/* Tomorrow's Preparation */}
+      <section>
+        <h2 className="text-xl font-semibold mb-4">⚡️ Tomorrow's Preparation</h2>
+        <blockquote className="border-l-4 border-gray-200 pl-4 italic text-gray-600 mb-6">
+          "When you wake up in the morning, tell yourself: The people I deal with today will be meddling, ungrateful, arrogant, dishonest, jealous, and surly." - Marcus Aurelius
+        </blockquote>
+        <div className="space-y-6">
+          <div>
+            <h3 className="text-lg font-medium mb-2">1. What challenges might I face tomorrow?</h3>
+            <EditorContent editor={preparationChallengesEditor} />
+          </div>
+          <div>
+            <h3 className="text-lg font-medium mb-2">2. How will I prepare to meet them with virtue?</h3>
+            <EditorContent editor={preparationApproachEditor} />
+          </div>
+        </div>
+      </section>
+    
+      {/* Space for Your Thoughts */}
       <section>
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-semibold">✍️ Space for Your Thoughts</h2>
@@ -202,39 +279,12 @@ const EveningReview: React.FC<EveningReviewProps> = ({
             Browse Prompts
           </button>
         </div>
-        <div className="border rounded-lg overflow-hidden">
-          <div className="border-b p-2 flex gap-2">
-            <EditorButton
-              onClick={() => mainEditor?.chain().focus().toggleBold().run()}
-              isActive={mainEditor?.isActive('bold')}
-              icon={<Bold className="h-4 w-4" />}
-            />
-            <EditorButton
-              onClick={() => mainEditor?.chain().focus().toggleItalic().run()}
-              isActive={mainEditor?.isActive('italic')}
-              icon={<Italic className="h-4 w-4" />}
-            />
-            <EditorButton
-              onClick={() => mainEditor?.chain().focus().toggleBulletList().run()}
-              isActive={mainEditor?.isActive('bulletList')}
-              icon={<List className="h-4 w-4" />}
-            />
-            <EditorButton
-              onClick={() => mainEditor?.chain().focus().toggleBlockquote().run()}
-              isActive={mainEditor?.isActive('blockquote')}
-              icon={<Quote className="h-4 w-4" />}
-            />
-          </div>
-          <div className="p-4 relative">
-            <EditorContent editor={mainEditor} />
-            <EditorAIPrompt 
-              editor={mainEditor}
-              onPromptGenerated={handlePromptSelect}
-              model="gemini-2.0-pro-exp-02-05"
-              key="mainEditorPrompt"
-            />
-          </div>
-        </div>
+        <Editor
+          content={initialContent.mainContent}
+          onContentChange={(content) => handleContentUpdate()}
+          onPromptSelect={onPromptSelect}
+          onOpenPromptLibrary={onOpenPromptLibrary}
+        />
       </section>
     </motion.div>
   );
