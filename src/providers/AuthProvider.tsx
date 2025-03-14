@@ -21,6 +21,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [retryCount, setRetryCount] = React.useState(0);
 
   React.useEffect(() => {
+    // Handle magic link redirects
+    const { hash } = window.location;
+    if (hash && hash.includes('access_token')) {
+      // Remove the hash to prevent it from being visible
+      window.location.hash = '';
+    }
+
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUserId(session?.user?.id || null);
